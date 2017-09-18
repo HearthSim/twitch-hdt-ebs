@@ -7,9 +7,14 @@ INSTALLED_APPS = [
 	"django.contrib.auth",
 	"django.contrib.contenttypes",
 	"django.contrib.sessions",
+	"django.contrib.sites",
+	"allauth.account",
+	"allauth.socialaccount",
+	"oauth2_provider",
 	"rest_framework",
 	"hearthsim_identity.accounts",
 	"hearthsim_identity.api",
+	"hearthsim_identity.oauth2",
 ]
 
 MIDDLEWARE = [
@@ -42,6 +47,8 @@ USE_TZ = True
 REST_FRAMEWORK = {
 	"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer", ),
 }
+
+OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2.Application"
 
 
 # Fill in local_settings.py
