@@ -1,33 +1,44 @@
 from django.conf import settings
-from django.http import Http404, HttpResponse
-from django.utils.decorators import method_decorator
 from django.utils.timezone import now
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from jwt import encode as jwt_encode
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rest_framework.serializers import CharField, Serializer
+from rest_framework.status import HTTP_400_BAD_REQUEST
+from rest_framework.views import APIView
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class JWTSignView(View):
+class JWTSignInputSerializer(Serializer):
+	client_id = CharField()
+
+	def validate_client_id(self, data):
+		if data not in settings.JWTSIGNER_APPLICATIONS:
+			raise ValidationError("No such application")
+		return data
+
+
+class JWTSignView(APIView):
 	def get_user_id(self):
 		return "NotImplemented"
 
 	def get_expiry(self):
 		return int(now().timestamp()) + settings.JWTSIGNER_JWT_TTL_SECONDS
 
-	def post(self, request, application):
-		app = settings.JWTSIGNER_APPLICATIONS.get(application)
-		if not app:
-			raise Http404("No such application: %r" % (application))
+	def post(self, request, format=None):
+		serializer = JWTSignInputSerializer(data=request.data)
+		if serializer.is_valid():
+			client_id = serializer.validated_data["client_id"]
+			secret = settings.JWTSIGNER_APPLICATIONS[client_id]
+			assert secret
+		else:
+			return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 		payload = {
 			"exp": self.get_expiry(),
 			"user_id": self.get_user_id(),
 			"role": "external",
 		}
-		secret = app["secret"]
-		assert secret
 
 		encoded_jwt = jwt_encode(payload, secret, algorithm="HS256")
 
-		return HttpResponse(encoded_jwt)
+		return Response({"jwt": encoded_jwt, "payload": payload})

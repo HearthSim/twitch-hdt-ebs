@@ -7,6 +7,7 @@ INSTALLED_APPS = [
 	"django.contrib.auth",
 	"django.contrib.contenttypes",
 	"django.contrib.sessions",
+	"rest_framework",
 	"hearthsim_identity.accounts",
 	"hearthsim_identity.api",
 ]
@@ -35,6 +36,12 @@ TIME_ZONE = "UTC"
 USE_I18N = False
 USE_L10N = False
 USE_TZ = True
+
+
+# Disable DRF browsable API (it requires templates to be setup)
+REST_FRAMEWORK = {
+	"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer", ),
+}
 
 
 # Fill in local_settings.py
