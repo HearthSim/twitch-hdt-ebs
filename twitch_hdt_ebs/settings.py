@@ -1,5 +1,7 @@
 """
-Django settings for jwtsigner project.
+Django configuration
+
+https://docs.djangoproject.com/en/1.11/topics/settings/
 """
 
 
@@ -30,8 +32,8 @@ MIDDLEWARE = [
 TEMPLATES = []
 AUTH_PASSWORD_VALIDATORS = []
 
-WSGI_APPLICATION = "jwtsigner.wsgi.application"
-ROOT_URLCONF = "jwtsigner.urls"
+WSGI_APPLICATION = "twitch_hdt_ebs.wsgi.application"
+ROOT_URLCONF = "twitch_hdt_ebs.urls"
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -52,12 +54,12 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2.Application"
 
 
 # Fill in local_settings.py
-JWTSIGNER_APPLICATIONS = {}
-JWTSIGNER_JWT_TTL_SECONDS = 120
+EBS_APPLICATIONS = {}
+EBS_JWT_TTL_SECONDS = 120
 
 
 try:
-	from jwtsigner.local_settings import *  # noqa
+	from twitch_hdt_ebs.local_settings import *  # noqa
 except ImportError as e:
 	# Make sure you have a `local_settings.py` file in the same directory as `settings.py`.
 	# We raise a verbose error because the file is *required* in production.

@@ -1,4 +1,4 @@
-from jwtsigner.settings import *  # noqa
+from twitch_hdt_ebs.settings import *  # noqa
 
 
 SECRET_KEY = "hunter2"

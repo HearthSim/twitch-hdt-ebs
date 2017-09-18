@@ -1,5 +1,5 @@
 """
-jwtsigner URL Configuration
+URL Configuration
 """
 
 from django.conf.urls import url
