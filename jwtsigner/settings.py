@@ -37,6 +37,11 @@ USE_L10N = False
 USE_TZ = True
 
 
+# Fill in local_settings.py
+JWTSIGNER_APPLICATIONS = {}
+JWTSIGNER_JWT_TTL_SECONDS = 120
+
+
 try:
 	from jwtsigner.local_settings import *  # noqa
 except ImportError as e:
