@@ -55,6 +55,6 @@ class JWTSignView(APIView):
 
 		return Response({
 			"status": resp.status_code,
-			"content_type": resp.headers["content-type"],
+			"content_type": resp.headers.get("content-type"),
 			"content": resp.content,
 		}, status=resp.status_code)
