@@ -29,8 +29,7 @@ class JWTSignView(APIView):
 		serializer = JWTSignInputSerializer(data=request.data)
 		if serializer.is_valid():
 			client_id = serializer.validated_data["client_id"]
-			secret = settings.EBS_APPLICATIONS[client_id]
-			assert secret
+			config = settings.EBS_APPLICATIONS[client_id]
 		else:
 			return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
@@ -47,7 +46,10 @@ class JWTSignView(APIView):
 			}
 			return Response([error], status=HTTP_401_UNAUTHORIZED)
 
-		client = TwitchClient(client_id, secret, jwt_ttl=settings.EBS_JWT_TTL_SECONDS)
+		client = TwitchClient(
+			client_id, config["secret"], config["owner_id"],
+			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
+		)
 
 		resp = client.send_pubsub_message(user_id, {"msg": "hello world"})
 

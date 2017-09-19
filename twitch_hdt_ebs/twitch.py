@@ -1,3 +1,4 @@
+import base64
 import datetime
 import json
 
@@ -12,19 +13,20 @@ class TwitchClient:
 
 	USER_AGENT = "HearthSim.TwitchClient/0.0"
 
-	def __init__(self, client_id, client_secret, jwt_ttl=120):
+	def __init__(self, client_id, client_secret, owner_user_id, jwt_ttl=120):
 		self.client_id = client_id
-		self.client_secret = client_secret
+		self.client_secret = base64.b64decode(client_secret)
+		self.owner_user_id = owner_user_id
 		self.jwt_ttl = jwt_ttl
 		self.jwt_algorithm = "HS256"
 
-	def sign_jwt(self, exp, user_id, role="external"):
-		payload = {"exp": exp, "user_id": user_id, "role": role}
+	def sign_jwt(self, exp, role="external"):
+		payload = {"exp": exp, "user_id": self.owner_user_id, "role": role}
 		return jwt.encode(payload, self.client_secret, self.jwt_algorithm)
 
 	def get_ebs_authorization(self, channel_id):
 		exp = int(datetime.datetime.now().timestamp()) + self.jwt_ttl
-		encoded_jwt = self.sign_jwt(exp, channel_id)
+		encoded_jwt = self.sign_jwt(exp)
 		return "Bearer {jwt}".format(jwt=encoded_jwt.decode("utf-8"))
 
 	def send_pubsub_message(self, channel_id, message):
