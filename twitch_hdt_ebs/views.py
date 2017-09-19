@@ -1,7 +1,6 @@
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.utils.timezone import now
-from jwt import encode as jwt_encode
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.serializers import CharField, Serializer
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
+
+from .twitch import TwitchClient
 
 
 class JWTSignInputSerializer(Serializer):
@@ -50,12 +51,6 @@ class JWTSignView(APIView):
 			}
 			return Response([error], status=HTTP_401_UNAUTHORIZED)
 
-		payload = {
-			"exp": self.get_expiry(),
-			"user_id": user_id,
-			"role": "external",
-		}
+		client = TwitchClient(client_id, secret)
 
-		encoded_jwt = jwt_encode(payload, secret, algorithm="HS256")
-
-		return Response({"jwt": encoded_jwt, "payload": payload})
+		return Response(client.sign_jwt(self.get_expiry(), user_id))
