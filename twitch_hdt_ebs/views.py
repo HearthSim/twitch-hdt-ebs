@@ -1,6 +1,5 @@
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
-from django.utils.timezone import now
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -26,9 +25,6 @@ class JWTSignView(APIView):
 	authentication_classes = (OAuth2Authentication, )
 	permission_classes = (IsAuthenticated, )
 
-	def get_expiry(self):
-		return int(now().timestamp()) + settings.EBS_JWT_TTL_SECONDS
-
 	def post(self, request, format=None):
 		serializer = JWTSignInputSerializer(data=request.data)
 		if serializer.is_valid():
@@ -51,6 +47,12 @@ class JWTSignView(APIView):
 			}
 			return Response([error], status=HTTP_401_UNAUTHORIZED)
 
-		client = TwitchClient(client_id, secret)
+		client = TwitchClient(client_id, secret, jwt_ttl=settings.EBS_JWT_TTL_SECONDS)
 
-		return Response(client.sign_jwt(self.get_expiry(), user_id))
+		resp = client.send_pubsub_message(user_id, {"msg": "hello world"})
+
+		return Response({
+			"status": resp.status_code,
+			"content_type": resp.headers["content-type"],
+			"content": resp.content,
+		}, status=resp.status_code)
