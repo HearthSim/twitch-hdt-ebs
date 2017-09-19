@@ -19,14 +19,23 @@ class TwitchClient:
 		self.owner_user_id = owner_user_id
 		self.jwt_ttl = jwt_ttl
 		self.jwt_algorithm = "HS256"
+		self.pubsub_perms = {"send": ["*"]}
 
-	def sign_jwt(self, exp, role="external"):
-		payload = {"exp": exp, "user_id": self.owner_user_id, "role": role}
+	def sign_jwt(self, exp, channel_id, role="external"):
+		payload = {
+			"exp": exp,
+			"user_id": self.owner_user_id,
+			"role": role,
+			"channel_id": channel_id,
+		}
+		if self.pubsub_perms:
+			payload["pubsub_perms"] = self.pubsub_perms
+
 		return jwt.encode(payload, self.client_secret, self.jwt_algorithm)
 
 	def get_ebs_authorization(self, channel_id):
 		exp = int(datetime.datetime.now().timestamp()) + self.jwt_ttl
-		encoded_jwt = self.sign_jwt(exp)
+		encoded_jwt = self.sign_jwt(exp, channel_id)
 		return "Bearer {jwt}".format(jwt=encoded_jwt.decode("utf-8"))
 
 	def send_pubsub_message(self, channel_id, message):
