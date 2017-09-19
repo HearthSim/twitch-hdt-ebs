@@ -4,7 +4,7 @@ from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import CharField, Serializer
+from rest_framework.serializers import CharField, DictField, Serializer
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
 
@@ -14,6 +14,8 @@ from .twitch import TwitchClient
 class JWTSignInputSerializer(Serializer):
 	client_id = CharField()
 	user_id = CharField()
+	message_type = CharField()
+	message_data = DictField()
 
 	def validate_client_id(self, data):
 		if data not in settings.EBS_APPLICATIONS:
@@ -51,7 +53,11 @@ class JWTSignView(APIView):
 			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
 		)
 
-		resp = client.send_pubsub_message(user_id, {"msg": "hello world"})
+		data = {
+			"type": serializer.validated_data["message_type"],
+			"data": serializer.validated_data["message_data"],
+		}
+		resp = client.send_pubsub_message(user_id, data)
 
 		return Response({
 			"status": resp.status_code,
