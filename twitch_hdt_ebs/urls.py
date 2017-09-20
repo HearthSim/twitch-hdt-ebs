@@ -8,5 +8,5 @@ from . import views
 
 
 urlpatterns = [
-	url("^sign/$", views.JWTSignView.as_view(), name="jwt_sign"),
+	url(r"^setup/$", views.ExtensionSetupView.as_view(), name="ebs_setup"),
 ]

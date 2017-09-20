@@ -23,12 +23,12 @@ class JWTSignInputSerializer(Serializer):
 		return data
 
 
-class JWTSignView(APIView):
+class BaseTwitchAPIView(APIView):
 	authentication_classes = (OAuth2Authentication, )
 	permission_classes = (IsAuthenticated, )
 
 	def post(self, request, format=None):
-		serializer = JWTSignInputSerializer(data=request.data)
+		serializer = self.serializer_class(data=request.data)
 		if serializer.is_valid():
 			client_id = serializer.validated_data["client_id"]
 			config = settings.EBS_APPLICATIONS[client_id]
@@ -53,11 +53,18 @@ class JWTSignView(APIView):
 			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
 		)
 
+		return self._process_request(client, user_id, serializer)
+
+
+class PubSubSendView(BaseTwitchAPIView):
+	serializer_class = JWTSignInputSerializer
+
+	def _process_request(self, twitch_client, user_id, serializer):
 		data = {
 			"type": serializer.validated_data["message_type"],
 			"data": serializer.validated_data["message_data"],
 		}
-		resp = client.send_pubsub_message(user_id, data)
+		resp = twitch_client.send_pubsub_message(user_id, data)
 
 		return Response({
 			"status": resp.status_code,
