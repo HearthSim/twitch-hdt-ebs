@@ -1,70 +1,82 @@
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import CharField, DictField, Serializer
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
 
 from .twitch import TwitchClient
 
 
-class JWTSignInputSerializer(Serializer):
-	client_id = CharField()
-	user_id = CharField()
-	message_type = CharField()
-	message_data = DictField()
+class HasValidTwitchClientId(BasePermission):
+	def has_permission(self, request, view):
+		client_id = request.META.get("HTTP_X_TWITCH_CLIENT_ID", "")
+		if not client_id:
+			raise ValidationError({"detail": "Missing X-Twitch-Client-Id header"})
 
-	def validate_client_id(self, data):
-		if data not in settings.EBS_APPLICATIONS:
-			raise ValidationError("No such application")
-		return data
+		if client_id not in settings.EBS_APPLICATIONS:
+			raise ValidationError({"detail": "Invalid Twitch Client ID: {}".format(client_id)})
+
+		request.twitch_client_id = client_id
+		return True
+
+
+class CanPublishToTwitchChannel(BasePermission):
+	def has_permission(self, request, view):
+		user_id = request.META.get("HTTP_X_TWITCH_USER_ID", "")
+		if not user_id:
+			raise ValidationError({"detail": "Missing X-Twitch-User-Id header"})
+
+		request.available_channels = list(SocialAccount.objects.filter(
+			user=request.user, provider="twitch"
+		).values_list("uid", flat=True))
+
+		if user_id not in request.available_channels:
+			raise PermissionDenied({
+				"code": "channel_not_allowed",
+				"detail": "No permission for channel {user_id}".format(user_id=repr(user_id)),
+				"available_channels": request.available_channels,
+			})
+			return False
+
+		request.twitch_user_id = user_id
+		return True
+
+
+class PubSubMessageSerializer(Serializer):
+	type = CharField()
+	data = DictField()
 
 
 class BaseTwitchAPIView(APIView):
 	authentication_classes = (OAuth2Authentication, )
-	permission_classes = (IsAuthenticated, )
+	permission_classes = (
+		IsAuthenticated, CanPublishToTwitchChannel, HasValidTwitchClientId,
+	)
 
-	def post(self, request, format=None):
-		serializer = self.serializer_class(data=request.data)
-		if serializer.is_valid():
-			client_id = serializer.validated_data["client_id"]
-			config = settings.EBS_APPLICATIONS[client_id]
-		else:
-			return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
-
-		user_id = serializer.validated_data["user_id"]
-
-		available_channels = SocialAccount.objects.filter(
-			user=request.user, provider="twitch"
-		).values_list("uid", flat=True)
-
-		if user_id not in available_channels:
-			error = {
-				"error": "Not authorized to publish to channel id %r" % (user_id),
-				"available_channels": available_channels,
-			}
-			return Response([error], status=HTTP_401_UNAUTHORIZED)
-
-		client = TwitchClient(
-			client_id, config["secret"], config["owner_id"],
+	def get_twitch_client(self):
+		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
+		return TwitchClient(
+			self.request.twitch_client_id, config["secret"], config["owner_id"],
 			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
 		)
 
-		return self._process_request(client, user_id, serializer)
-
 
 class PubSubSendView(BaseTwitchAPIView):
-	serializer_class = JWTSignInputSerializer
+	serializer_class = PubSubMessageSerializer
 
-	def _process_request(self, twitch_client, user_id, serializer):
+	def post(self, request, format=None):
+		twitch_client = self.get_twitch_client()
+		serializer = self.serializer_class(data=request.data)
+		serializer.is_valid(raise_exception=True)
+
 		data = {
-			"type": serializer.validated_data["message_type"],
-			"data": serializer.validated_data["message_data"],
+			"type": serializer.validated_data["type"],
+			"data": serializer.validated_data["data"],
 		}
-		resp = twitch_client.send_pubsub_message(user_id, data)
+		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, data)
 
 		return Response({
 			"status": resp.status_code,
