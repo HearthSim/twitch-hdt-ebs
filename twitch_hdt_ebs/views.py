@@ -82,4 +82,24 @@ class PubSubSendView(BaseTwitchAPIView):
 			"status": resp.status_code,
 			"content_type": resp.headers.get("content-type"),
 			"content": resp.content,
-		}, status=resp.status_code)
+		})
+
+
+class ExtensionSetupView(BaseTwitchAPIView):
+	def post(self, request, format=None):
+		twitch_client = self.get_twitch_client()
+
+		version = request.META.get("HTTP_X_TWITCH_EXTENSION_VERSION", "")
+		if not version:
+			raise ValidationError({"detail": "Missing X-Twitch-Extension-Version header"})
+
+		value = "COMPLETE"
+
+		resp = twitch_client.set_extension_required_configuration(
+			version=version, value=value, channel_id=self.request.twitch_user_id
+		)
+
+		if resp.status_code > 299:
+			return Response(resp.json(), status=resp.status_code)
+
+		return Response({"required_configuration": value})

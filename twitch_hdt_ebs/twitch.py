@@ -9,6 +9,9 @@ import requests
 class TwitchClient:
 	API_ROOT = "https://api.twitch.tv"
 	API_EBS_ROOT = API_ROOT + "/extensions"
+	API_EXTENSION_REQUIRED_CONFIGURATION = (
+		API_EBS_ROOT + "/{client_id}/{version}/required_configuration"
+	)
 	EBS_SEND_MESSAGE = API_EBS_ROOT + "/message/{channel_id}"
 
 	USER_AGENT = "HearthSim.TwitchClient/0.0"
@@ -50,7 +53,17 @@ class TwitchClient:
 
 		return self.post(endpoint, data, authorization)
 
-	def post(self, url, data, authorization=None):
+	def set_extension_required_configuration(self, version, channel_id, value):
+		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION.format(
+			client_id=self.client_id, version=version
+		)
+		params = {"channel_id": channel_id}
+		data = {"required_configuration": value}
+		authorization = self.get_ebs_authorization(channel_id)
+
+		return self.put(endpoint, params=params, data=data, authorization=authorization)
+
+	def get_headers(self, authorization):
 		headers = {
 			"Client-Id": self.client_id,
 			"User-Agent": self.USER_AGENT,
@@ -59,4 +72,12 @@ class TwitchClient:
 		if authorization:
 			headers["Authorization"] = authorization
 
-		return requests.post(url, json=data, headers=headers)
+		return headers
+
+	def post(self, url, data, params=None, authorization=None):
+		headers = self.get_headers(authorization)
+		return requests.post(url, params=params, headers=headers, json=data)
+
+	def put(self, url, data, params=None, authorization=None):
+		headers = self.get_headers(authorization)
+		return requests.put(url, params=params, headers=headers, json=data)
