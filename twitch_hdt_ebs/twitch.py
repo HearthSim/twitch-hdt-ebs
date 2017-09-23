@@ -51,7 +51,7 @@ class TwitchClient:
 			"targets": ["broadcast"],
 		}
 
-		return self.post(endpoint, data, authorization)
+		return self.post(endpoint, data, authorization=authorization)
 
 	def set_extension_required_configuration(self, version, channel_id, value):
 		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION.format(
@@ -61,7 +61,7 @@ class TwitchClient:
 		data = {"required_configuration": value}
 		authorization = self.get_ebs_authorization(channel_id)
 
-		return self.put(endpoint, params=params, data=data, authorization=authorization)
+		return self.put(endpoint, data=data, params=params, authorization=authorization)
 
 	def get_headers(self, authorization):
 		headers = {
