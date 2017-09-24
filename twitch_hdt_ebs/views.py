@@ -1,7 +1,13 @@
+import base64
+
+import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import (
+	AuthenticationFailed, PermissionDenied, ValidationError
+)
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import CharField, DictField, Serializer
@@ -10,16 +16,53 @@ from rest_framework.views import APIView
 from .twitch import TwitchClient
 
 
+def _extract_twitch_client_id(request):
+	client_id = request.META.get("HTTP_X_TWITCH_CLIENT_ID", "")
+	if not client_id:
+		raise ValidationError({"detail": "Missing X-Twitch-Client-Id header"})
+
+	if client_id not in settings.EBS_APPLICATIONS:
+		raise ValidationError({"detail": "Invalid Twitch Client ID: {}".format(client_id)})
+
+	return client_id
+
+
+class TwitchJWTAuthentication(BaseAuthentication):
+	def authenticate(self, request):
+		auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+		if not auth_header.startswith("Bearer "):
+			return None
+		token = auth_header[len("Bearer "):]
+
+		twitch_client_id = _extract_twitch_client_id(request)
+		secret = base64.b64decode(settings.EBS_APPLICATIONS[twitch_client_id]["secret"])
+
+		payload = jwt.decode(token.encode("utf-8"), secret)
+
+		try:
+			payload = jwt.decode(token.encode("utf-8"), secret)
+		except jwt.exceptions.DecodeError as e:
+			raise AuthenticationFailed({"code": "invalid_jwt", "detail": str(e)})
+
+		expected_keys = ("user_id", "channel_id", "role")
+		for k in expected_keys:
+			if k not in payload:
+				raise AuthenticationFailed({"code": "missing_payload_key", "detail": k})
+
+		if payload["role"] != "broadcaster":
+			raise AuthenticationFailed({"code": "unauthorized_role", "detail": payload["role"]})
+
+		try:
+			twitch_account = SocialAccount.objects.get(provider="twitch", uid=payload["user_id"])
+		except SocialAccount.DoesNotExist:
+			raise AuthenticationFailed({"code": "account_not_linked", "detail": payload["user_id"]})
+
+		return (twitch_account.user, twitch_account)
+
+
 class HasValidTwitchClientId(BasePermission):
 	def has_permission(self, request, view):
-		client_id = request.META.get("HTTP_X_TWITCH_CLIENT_ID", "")
-		if not client_id:
-			raise ValidationError({"detail": "Missing X-Twitch-Client-Id header"})
-
-		if client_id not in settings.EBS_APPLICATIONS:
-			raise ValidationError({"detail": "Invalid Twitch Client ID: {}".format(client_id)})
-
-		request.twitch_client_id = client_id
+		request.twitch_client_id = _extract_twitch_client_id(request)
 		return True
 
 
@@ -86,6 +129,8 @@ class PubSubSendView(BaseTwitchAPIView):
 
 
 class ExtensionSetupView(BaseTwitchAPIView):
+	authentication_classes = (TwitchJWTAuthentication, )
+
 	def post(self, request, format=None):
 		twitch_client = self.get_twitch_client()
 

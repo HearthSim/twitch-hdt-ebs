@@ -56,7 +56,8 @@ The input is validated, signed with the extension's locally-configured secret, t
 
 ### `POST /setup/`: Verify and update setup state
 
-The `/setup/` endpoint takes the same authentication and twitch metadata headers but expects no input.
+The `/setup/` endpoint takes the same twitch metadata headers but expects no input.
+Authentication happens using a Twitch JWT which is verified then paired up with a HearthSim user.
 This endpoint allows verifying that OAuth2 permissions and Twitch setup is in order. Upon HTTP POST,
 the Twitch user's extension's `required_configuration` setting
 [will be updated](https://dev.twitch.tv/docs/extensions/reference#set-extension-required-configuration)
