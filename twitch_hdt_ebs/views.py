@@ -3,6 +3,7 @@ import base64
 import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from oauth2_provider.models import AccessToken
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import (
@@ -106,6 +107,10 @@ class BaseTwitchAPIView(APIView):
 			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
 		)
 
+	def get_ebs_client_id(self):
+		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
+		return config["ebs_client_id"]
+
 
 class PubSubSendView(BaseTwitchAPIView):
 	serializer_class = PubSubMessageSerializer
@@ -137,6 +142,12 @@ class ExtensionSetupView(BaseTwitchAPIView):
 		version = request.META.get("HTTP_X_TWITCH_EXTENSION_VERSION", "")
 		if not version:
 			raise ValidationError({"detail": "Missing X-Twitch-Extension-Version header"})
+
+		authorized_apps = AccessToken.objects.filter(
+			user=self.request.user, application__client_id=self.get_ebs_client_id(),
+		)
+		if not authorized_apps.count():
+			raise PermissionDenied({"code": "upstream_client_not_found"})
 
 		value = "COMPLETE"
 
