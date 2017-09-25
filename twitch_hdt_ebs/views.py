@@ -43,20 +43,20 @@ class TwitchJWTAuthentication(BaseAuthentication):
 		try:
 			payload = jwt.decode(token.encode("utf-8"), secret)
 		except jwt.exceptions.DecodeError as e:
-			raise AuthenticationFailed({"code": "invalid_jwt", "detail": str(e)})
+			raise AuthenticationFailed({"error": "invalid_jwt", "detail": str(e)})
 
 		expected_keys = ("user_id", "channel_id", "role")
 		for k in expected_keys:
 			if k not in payload:
-				raise AuthenticationFailed({"code": "missing_payload_key", "detail": k})
+				raise AuthenticationFailed({"error": "missing_payload_key", "detail": k})
 
 		if payload["role"] != "broadcaster":
-			raise AuthenticationFailed({"code": "unauthorized_role", "detail": payload["role"]})
+			raise AuthenticationFailed({"error": "unauthorized_role", "detail": payload["role"]})
 
 		try:
 			twitch_account = SocialAccount.objects.get(provider="twitch", uid=payload["user_id"])
 		except SocialAccount.DoesNotExist:
-			raise AuthenticationFailed({"code": "account_not_linked", "detail": payload["user_id"]})
+			raise AuthenticationFailed({"error": "account_not_linked", "detail": payload["user_id"]})
 
 		return (twitch_account.user, twitch_account)
 
@@ -79,8 +79,8 @@ class CanPublishToTwitchChannel(BasePermission):
 
 		if user_id not in request.available_channels:
 			raise PermissionDenied({
-				"code": "channel_not_allowed",
-				"detail": "No permission for channel {user_id}".format(user_id=repr(user_id)),
+				"error": "channel_not_allowed",
+				"detail": user_id,
 				"available_channels": request.available_channels,
 			})
 			return False
