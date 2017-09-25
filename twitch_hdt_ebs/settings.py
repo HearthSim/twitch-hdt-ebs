@@ -52,6 +52,23 @@ REST_FRAMEWORK = {
 	"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer", ),
 }
 
+# DRF CORS handling
+CORS_ALLOW_METHODS = ("OPTIONS", "POST",)
+CORS_ORIGIN_REGEX_WHITELIST = (r"^https://(\w+)\.ext-twitch.tv/", )
+CORS_ALLOW_HEADERS = (
+	"accept",
+	"accept-encoding",
+	"authorization",
+	"content-type",
+	"dnt",
+	"origin",
+	"user-agent",
+	"x-requested-with",
+	"x-twitch-client-id",
+	"x-twitch-extension-version",
+	"x-twitch-user-id",
+)
+
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2.Application"
 
 
