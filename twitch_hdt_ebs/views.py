@@ -36,12 +36,13 @@ class TwitchJWTAuthentication(BaseAuthentication):
 		token = auth_header[len("Bearer "):]
 
 		twitch_client_id = _extract_twitch_client_id(request)
-		secret = base64.b64decode(settings.EBS_APPLICATIONS[twitch_client_id]["secret"])
+		secret = settings.EBS_APPLICATIONS[twitch_client_id]["secret"]
+		decoded_secret = base64.b64decode(secret)
 
-		payload = jwt.decode(token.encode("utf-8"), secret)
+		payload = jwt.decode(token.encode("utf-8"), decoded_secret)
 
 		try:
-			payload = jwt.decode(token.encode("utf-8"), secret)
+			payload = jwt.decode(token.encode("utf-8"), decoded_secret)
 		except jwt.exceptions.DecodeError as e:
 			raise AuthenticationFailed({"error": "invalid_jwt", "detail": str(e)})
 

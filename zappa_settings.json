@@ -1,0 +1,51 @@
+{
+	"base": {
+		"profile_name": null,
+		"project_name": "twitch-hdt-ebs",
+		"lambda_description": "https://github.com/HearthSim/twitch-hdt-ebs",
+		"runtime": "python3.6",
+		"memory_size": 128,
+		"aws_region": "us-east-1",
+		"django_settings": "twitch_hdt_ebs.settings",
+		"s3_bucket": "hearthsim-zappa",
+		"delete_s3_zip": false,
+		"keep_warm": false,
+		"route53_enabled": false,
+		"exclude": [
+			"boto3*",
+			"botocore*",
+			"*.css",
+			"*.eot",
+			"*.html",
+			"*.mo",
+			"*.js",
+			"*.svg",
+			"*.ttf",
+			"*.woff",
+			"*.woff2",
+			"*__pycache__*"
+		],
+		"extra_permissions": [{
+			"Action": [
+				"ssm:GetParameters",
+				"kms:Decrypt"
+			],
+			"Resource": ["*"],
+			"Effect": "Allow"
+		}]
+	},
+	"dev": {
+		"extends": "base",
+		"cloudwatch_data_trace": true,
+		"cloudwatch_log_level": "INFO",
+		"debug": true,
+		"log_level": "DEBUG",
+		"xray_tracing": true
+	},
+	"production": {
+		"extends": "base",
+		"cloudwatch_log_level": "ERROR",
+		"log_level": "ERROR",
+		"debug": false
+	}
+}
