@@ -148,7 +148,7 @@ class ExtensionSetupView(BaseTwitchAPIView):
 			user=self.request.user, application__client_id=self.get_ebs_client_id(),
 		)
 		if not authorized_apps.count():
-			raise PermissionDenied({"code": "upstream_client_not_found"})
+			raise PermissionDenied({"error": "upstream_client_not_found"})
 
 		value = "COMPLETE"
 

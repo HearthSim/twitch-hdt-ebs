@@ -23,7 +23,8 @@ With every request, the following two headers should be send:
 
 The Twitch User ID must correspond to a [linked Twitch account on HSReplay.net](https://hsreplay.net/account/social/connections/)
 for the same account as the one the client authenticates itself against.
-If the User ID is not one of the account's linked Twitch accounts, an HTTP 403 will be returned with the code `channel_not_allowed` and extra details.
+If the User ID is not one of the account's linked Twitch accounts, an HTTP 403
+will be returned with the error `channel_not_allowed` and extra details.
 Example:
 
 ```
@@ -40,7 +41,7 @@ Content-Type: application/json
 
 {
     "available_channels": ["123456", "123654"],
-    "code": "channel_not_allowed",
+    "error": "channel_not_allowed",
     "detail": "No permission for channel '1111111'"
 }
 ```
