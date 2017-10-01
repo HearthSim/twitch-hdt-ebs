@@ -8,6 +8,9 @@ import os
 
 
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+	import raven
+	from raven.transport import HTTPTransport
+
 	DEBUG = False
 	ALLOWED_HOSTS = [
 		".twitch-ebs.hearthsim.net",
@@ -18,6 +21,7 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 else:
 	DEBUG = True
 	ALLOWED_HOSTS = ["*"]
+	raven = None
 
 
 def get_secure_parameters(namespace="twitch_ebs"):
@@ -30,6 +34,7 @@ def get_secure_parameters(namespace="twitch_ebs"):
 		"DJANGO_DB_HOST", "DJANGO_DB_NAME", "DJANGO_DB_USER",
 		"DJANGO_DB_PASSWORD", "DJANGO_SECRET_KEY", "HDT_EBS_CLIENT_ID",
 		"HDT_TWITCH_CLIENT_ID", "HDT_TWITCH_SECRET_KEY", "HDT_TWITCH_OWNER_ID",
+		"SENTRY_RAVEN_DSN",
 	]
 	ssm_parameters = {
 		"{}.{}".format(namespace, param.lower()): param for param in parameters
@@ -76,6 +81,14 @@ INSTALLED_APPS = [
 	"hearthsim_identity.api",
 	"hearthsim_identity.oauth2",
 ]
+
+if raven:
+	INSTALLED_APPS.append("raven.contrib.django.raven_compat")
+	RAVEN_CONFIG = {
+		"dsn": params.get("SENTRY_RAVEN_DSN", ""),
+		"transport": HTTPTransport,
+	}
+
 
 MIDDLEWARE = [
 	"django.middleware.security.SecurityMiddleware",
