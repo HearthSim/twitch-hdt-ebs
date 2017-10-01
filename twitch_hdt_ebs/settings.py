@@ -10,7 +10,7 @@ import os
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 	DEBUG = False
 	ALLOWED_HOSTS = [
-		".hsreplay.net",
+		".twitch-ebs.hearthsim.net",
 		".execute-api.{region}.amazonaws.com".format(
 			region=os.environ.get("AWS_REGION", "us-east-1")
 		),

@@ -42,10 +42,12 @@
 		"log_level": "DEBUG",
 		"xray_tracing": true
 	},
-	"production": {
+	"live": {
 		"extends": "base",
 		"cloudwatch_log_level": "ERROR",
 		"log_level": "ERROR",
-		"debug": false
+		"debug": false,
+		"domain": "twitch-ebs.hearthsim.net",
+		"certificate_arn": "arn:aws:acm:us-east-1:746159132190:certificate/106d16cb-7f03-4831-9d2b-1fd6f9127229"
 	}
 }
