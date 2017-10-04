@@ -32,7 +32,10 @@ class TwitchJWTAuthentication(BaseAuthentication):
 	def authenticate(self, request):
 		auth_header = request.META.get("HTTP_AUTHORIZATION", "")
 		if not auth_header.startswith("Bearer "):
-			return None
+			raise AuthenticationFailed({
+				"error": "invalid_authorization",
+				"detail": "Invalid Authorization header (Bearer required).",
+			})
 		token = auth_header[len("Bearer "):]
 
 		twitch_client_id = _extract_twitch_client_id(request)
