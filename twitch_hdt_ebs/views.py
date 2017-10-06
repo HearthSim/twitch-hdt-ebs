@@ -161,3 +161,30 @@ class ExtensionSetupView(BaseTwitchAPIView):
 			return Response(resp.json(), status=resp.status_code)
 
 		return Response({"required_configuration": value})
+
+
+class ConfigSerializer(Serializer):
+	deck_position = CharField(default="")
+	hidden = CharField(default="")
+
+
+class SetConfigView(BaseTwitchAPIView):
+	authentication_classes = (TwitchJWTAuthentication, )
+	serializer_class = ConfigSerializer
+	settings_key = "twitch_ebs"
+
+	def get(self, request, format=None):
+		user_settings = request.user.settings.get(self.settings_key, {})
+		serializer = self.serializer_class(data=user_settings)
+		serializer.is_valid()
+		return Response(serializer.data)
+
+	def put(self, request, format=None):
+		serializer = self.serializer_class(data=request.data)
+		if not serializer.is_valid():
+			raise ValidationError(serializer.errors)
+
+		request.user.settings[self.settings_key] = serializer.validated_data
+		request.user.save()
+
+		return Response(serializer.validated_data)
