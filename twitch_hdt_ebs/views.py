@@ -125,6 +125,7 @@ class PubSubSendView(BaseTwitchAPIView):
 		data = {
 			"type": serializer.validated_data["type"],
 			"data": serializer.validated_data["data"],
+			"config": request.user.settings.get("twitch_ebs", {}),
 		}
 		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, data)
 
