@@ -26,7 +26,7 @@ else:
 
 def get_secure_parameters(namespace="twitch_ebs"):
 	if DEBUG:
-		return {}
+		return os.environ
 
 	import boto3
 
