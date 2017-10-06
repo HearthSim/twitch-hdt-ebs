@@ -42,8 +42,6 @@ class TwitchJWTAuthentication(BaseAuthentication):
 		secret = settings.EBS_APPLICATIONS[twitch_client_id]["secret"]
 		decoded_secret = base64.b64decode(secret)
 
-		payload = jwt.decode(token.encode("utf-8"), decoded_secret)
-
 		try:
 			payload = jwt.decode(token.encode("utf-8"), decoded_secret)
 		except jwt.exceptions.DecodeError as e:
