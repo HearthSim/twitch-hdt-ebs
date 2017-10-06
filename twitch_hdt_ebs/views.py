@@ -36,14 +36,14 @@ class TwitchJWTAuthentication(BaseAuthentication):
 				"error": "invalid_authorization",
 				"detail": "Invalid Authorization header (Bearer required).",
 			})
-		token = auth_header[len("Bearer "):]
+		token = auth_header[len("Bearer "):].encode("utf-8")
 
 		twitch_client_id = _extract_twitch_client_id(request)
 		secret = settings.EBS_APPLICATIONS[twitch_client_id]["secret"]
 		decoded_secret = base64.b64decode(secret)
 
 		try:
-			payload = jwt.decode(token.encode("utf-8"), decoded_secret)
+			payload = jwt.decode(token, decoded_secret, verify=settings.EBS_JWT_VERIFY)
 		except jwt.exceptions.DecodeError as e:
 			raise AuthenticationFailed({"error": "invalid_jwt", "detail": str(e)})
 
