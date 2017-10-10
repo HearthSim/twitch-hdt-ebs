@@ -9,7 +9,7 @@
 		"django_settings": "twitch_hdt_ebs.settings",
 		"s3_bucket": "hearthsim-zappa",
 		"delete_s3_zip": false,
-		"keep_warm": false,
+		"keep_warm": true,
 		"route53_enabled": false,
 		"exclude": [
 			"boto3*",
