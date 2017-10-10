@@ -122,7 +122,7 @@ REST_FRAMEWORK = {
 }
 
 # DRF CORS handling
-CORS_ALLOW_METHODS = ("OPTIONS", "POST")
+CORS_ALLOW_METHODS = ("OPTIONS", "GET", "POST", "PUT")
 CORS_ORIGIN_REGEX_WHITELIST = (r"^https://(\w+)\.ext-twitch\.tv$", )
 CORS_ALLOW_HEADERS = (
 	"accept",
