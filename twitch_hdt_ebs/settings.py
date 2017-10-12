@@ -153,5 +153,6 @@ INFLUX_DATABASES = {
 		"password": params.get("INFLUX_DB_PASSWORD"),
 		"timeout": 2,
 		"ssl": True,
+		"verify_ssl": True,
 	}
 }
