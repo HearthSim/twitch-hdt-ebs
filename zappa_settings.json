@@ -28,6 +28,7 @@
 		"extra_permissions": [{
 			"Action": [
 				"ssm:GetParameters",
+				"ssm:GetParametersByPath",
 				"kms:Decrypt"
 			],
 			"Resource": ["*"],

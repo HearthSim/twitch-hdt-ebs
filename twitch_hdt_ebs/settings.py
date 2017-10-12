@@ -30,26 +30,14 @@ def get_secure_parameters(namespace="twitch_ebs"):
 
 	import boto3
 
-	parameters = [
-		"DJANGO_DB_HOST", "DJANGO_DB_NAME", "DJANGO_DB_USER",
-		"DJANGO_DB_PASSWORD", "DJANGO_SECRET_KEY", "HDT_EBS_CLIENT_ID",
-		"HDT_TWITCH_CLIENT_ID", "HDT_TWITCH_SECRET_KEY", "HDT_TWITCH_OWNER_ID",
-		"SENTRY_RAVEN_DSN", "INFLUX_DB_NAME", "INFLUX_DB_HOST", "INFLUX_DB_PORT",
-		"INFLUX_DB_USER", "INFLUX_DB_PASSWORD",
-	]
-	ssm_parameters = {
-		"{}.{}".format(namespace, param.lower()): param for param in parameters
-	}
-
 	ssm = boto3.client("ssm")
-	response = ssm.get_parameters(Names=list(ssm_parameters.keys()), WithDecryption=True)
-	invalid_parameters = response.get("InvalidParameters", [])
-	if invalid_parameters:
-		raise ValueError("Invalid parameters: {}".format(str(invalid_parameters)))
+
+	prefix = "/{}/".format(namespace)
+	response = ssm.get_parameters_by_path(Path=prefix, Recursive=True, WithDecryption=True)
 
 	ret = {}
 	for p in response["Parameters"]:
-		ret[ssm_parameters[p["Name"]]] = p["Value"]
+		ret[p["Name"].replace(prefix, "").upper()] = p["Value"]
 
 	return ret
 
