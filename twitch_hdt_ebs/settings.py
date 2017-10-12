@@ -33,10 +33,17 @@ def get_secure_parameters(namespace="twitch_ebs"):
 	ssm = boto3.client("ssm")
 
 	prefix = "/{}/".format(namespace)
-	response = ssm.get_parameters_by_path(Path=prefix, Recursive=True, WithDecryption=True)
+	kwargs = {"Path": prefix, "Recursive": True, "WithDecryption": True}
+	response = ssm.get_parameters_by_path(**kwargs)
+
+	params = list(response["Parameters"])
+	while response.get("NextToken"):
+		kwargs["NextToken"] = response["NextToken"]
+		response = ssm.get_parameters_by_path(**kwargs)
+		params += response["Parameters"]
 
 	ret = {}
-	for p in response["Parameters"]:
+	for p in params:
 		ret[p["Name"].replace(prefix, "").upper()] = p["Value"]
 
 	return ret
