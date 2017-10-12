@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import CharField, DictField, Serializer
 from rest_framework.views import APIView
 
+from .metrics import write_point
 from .twitch import TwitchClient
 
 
@@ -189,3 +190,15 @@ class SetConfigView(BaseTwitchAPIView):
 		request.user.save()
 
 		return Response(serializer.validated_data)
+
+
+def exception_handler(exc, context):
+	from rest_framework.views import exception_handler as original_handler
+
+	response = original_handler(exc, context)
+
+	detail = getattr(exc, "detail", {})
+	if detail and isinstance(detail, dict):
+		write_point("api_error", {"count": 1}, error=detail.get("error", "unknown"))
+
+	return response
