@@ -34,7 +34,8 @@ def get_secure_parameters(namespace="twitch_ebs"):
 		"DJANGO_DB_HOST", "DJANGO_DB_NAME", "DJANGO_DB_USER",
 		"DJANGO_DB_PASSWORD", "DJANGO_SECRET_KEY", "HDT_EBS_CLIENT_ID",
 		"HDT_TWITCH_CLIENT_ID", "HDT_TWITCH_SECRET_KEY", "HDT_TWITCH_OWNER_ID",
-		"SENTRY_RAVEN_DSN",
+		"SENTRY_RAVEN_DSN", "INFLUX_DB_NAME", "INFLUX_DB_HOST", "INFLUX_DB_PORT",
+		"INFLUX_DB_USER", "INFLUX_DB_PASSWORD",
 	]
 	ssm_parameters = {
 		"{}.{}".format(namespace, param.lower()): param for param in parameters
@@ -151,3 +152,17 @@ EBS_APPLICATIONS = {
 }
 EBS_JWT_TTL_SECONDS = 120
 EBS_JWT_VERIFY = not DEBUG
+
+
+INFLUX_ENABLED = not DEBUG
+INFLUX_DATABASES = {
+	"default": {
+		"database": params.get("INFLUX_DB_NAME"),
+		"host": params.get("INFLUX_DB_HOST", "localhost"),
+		"port": int(params.get("INFLUX_DB_PORT", "8086")),
+		"username": params.get("INFLUX_DB_USER"),
+		"password": params.get("INFLUX_DB_PASSWORD"),
+		"timeout": 2,
+		"ssl": True,
+	}
+}

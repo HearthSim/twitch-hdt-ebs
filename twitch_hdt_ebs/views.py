@@ -3,8 +3,8 @@ import base64
 import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
-from oauth2_provider.models import AccessToken
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+from oauth2_provider.models import AccessToken
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import (
 	AuthenticationFailed, PermissionDenied, ValidationError
