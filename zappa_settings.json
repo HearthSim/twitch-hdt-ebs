@@ -5,6 +5,7 @@
 		"lambda_description": "https://github.com/HearthSim/twitch-hdt-ebs",
 		"runtime": "python3.6",
 		"memory_size": 128,
+		"timeout_seconds": 45,
 		"aws_region": "us-east-1",
 		"django_settings": "twitch_hdt_ebs.settings",
 		"s3_bucket": "hearthsim-zappa",
