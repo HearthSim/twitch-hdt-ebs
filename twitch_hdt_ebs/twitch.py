@@ -6,6 +6,10 @@ import jwt
 import requests
 
 
+DEFAULT_TIMEOUT = 60
+DEFAULT_PUBSUB_TIMEOUT = 5
+
+
 class TwitchClient:
 	API_ROOT = "https://api.twitch.tv"
 	API_EBS_ROOT = API_ROOT + "/extensions"
@@ -41,7 +45,7 @@ class TwitchClient:
 		encoded_jwt = self.sign_jwt(exp, channel_id)
 		return "Bearer {jwt}".format(jwt=encoded_jwt.decode("utf-8"))
 
-	def send_pubsub_message(self, channel_id, message):
+	def send_pubsub_message(self, channel_id, message, timeout=DEFAULT_PUBSUB_TIMEOUT):
 		endpoint = self.EBS_SEND_MESSAGE.format(channel_id=channel_id)
 		authorization = self.get_ebs_authorization(channel_id)
 
@@ -51,7 +55,7 @@ class TwitchClient:
 			"targets": ["broadcast"],
 		}
 
-		return self.post(endpoint, data, authorization=authorization)
+		return self.post(endpoint, data, authorization=authorization, timeout=timeout)
 
 	def set_extension_required_configuration(self, version, channel_id, value):
 		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION.format(
@@ -74,10 +78,10 @@ class TwitchClient:
 
 		return headers
 
-	def post(self, url, data, params=None, authorization=None):
+	def post(self, url, data, params=None, authorization=None, timeout=DEFAULT_TIMEOUT):
 		headers = self.get_headers(authorization)
-		return requests.post(url, params=params, headers=headers, json=data)
+		return requests.post(url, params=params, headers=headers, json=data, timeout=timeout)
 
-	def put(self, url, data, params=None, authorization=None):
+	def put(self, url, data, params=None, authorization=None, timeout=DEFAULT_TIMEOUT):
 		headers = self.get_headers(authorization)
-		return requests.put(url, params=params, headers=headers, json=data)
+		return requests.put(url, params=params, headers=headers, json=data, timeout=timeout)
