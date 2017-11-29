@@ -1,4 +1,5 @@
 import base64
+import json
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -160,7 +161,19 @@ class ExtensionSetupView(BaseTwitchAPIView):
 		)
 
 		if resp.status_code > 299:
-			return Response(resp.json(), status=resp.status_code)
+			try:
+				twitch_data = resp.json()
+			except json.JSONDecodeError:
+				twitch_data = None
+
+			data = {
+				"error": "bad_upstream",
+				"detail": "Unexpected response from Twitch API",
+				"upstream_data": twitch_data,
+				"upstream_status_code": resp.status_code,
+			}
+
+			return Response(data, status=502)
 
 		return Response({"required_configuration": value})
 
