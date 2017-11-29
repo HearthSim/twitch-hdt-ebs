@@ -1,0 +1,19 @@
+# https://travis-ci.org/HearthSim/twitch-hdt-ebs
+sudo: false
+language: python
+python: "3.6"
+
+env:
+  - TOXENV=py36-django111
+  - TOXENV=py36-djangomaster
+  - TOXENV=flake8
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+install:
+  - pip install tox
+
+script:
+  - tox
