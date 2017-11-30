@@ -48,6 +48,8 @@ class TwitchJWTAuthentication(BaseAuthentication):
 			payload = jwt.decode(token, decoded_secret, verify=settings.EBS_JWT_VERIFY)
 		except jwt.exceptions.DecodeError as e:
 			raise AuthenticationFailed({"error": "invalid_jwt", "detail": str(e)})
+		except jwt.exceptions.ExpiredSignatureError as e:
+			raise AuthenticationFailed({"error": "expired_signature", "detail": str(e)})
 
 		expected_keys = ("user_id", "channel_id", "role")
 		for k in expected_keys:
