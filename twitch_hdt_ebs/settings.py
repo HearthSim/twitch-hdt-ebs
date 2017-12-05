@@ -73,9 +73,9 @@ INSTALLED_APPS = [
 	"oauth2_provider",
 	"rest_framework",
 	"corsheaders",
-	"hearthsim_identity.accounts",
-	"hearthsim_identity.api",
-	"hearthsim_identity.oauth2",
+	"hearthsim.identity.accounts",
+	"hearthsim.identity.api",
+	"hearthsim.identity.oauth2",
 ]
 
 if raven:
