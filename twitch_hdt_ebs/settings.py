@@ -6,6 +6,8 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 
 import os
 
+from hearthsim.instrumentation.ssm import get_secure_parameters
+
 
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 	import raven
@@ -24,32 +26,7 @@ else:
 	raven = None
 
 
-def get_secure_parameters(namespace="twitch_ebs"):
-	if DEBUG:
-		return os.environ
-
-	import boto3
-
-	ssm = boto3.client("ssm")
-
-	prefix = "/{}/".format(namespace)
-	kwargs = {"Path": prefix, "Recursive": True, "WithDecryption": True}
-	response = ssm.get_parameters_by_path(**kwargs)
-
-	params = list(response["Parameters"])
-	while response.get("NextToken"):
-		kwargs["NextToken"] = response["NextToken"]
-		response = ssm.get_parameters_by_path(**kwargs)
-		params += response["Parameters"]
-
-	ret = {}
-	for p in params:
-		ret[p["Name"].replace(prefix, "").upper()] = p["Value"]
-
-	return ret
-
-
-params = get_secure_parameters()
+params = get_secure_parameters("twitch_ebs", debug=DEBUG)
 
 SECRET_KEY = params.get("DJANGO_SECRET_KEY", "<local>")
 

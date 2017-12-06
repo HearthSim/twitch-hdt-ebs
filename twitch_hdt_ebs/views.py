@@ -4,6 +4,7 @@ import json
 import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
 from rest_framework.authentication import BaseAuthentication
@@ -15,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework.serializers import CharField, DictField, Serializer
 from rest_framework.views import APIView
 
-from .metrics import write_point
 from .twitch import TwitchClient
 
 
