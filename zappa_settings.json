@@ -8,7 +8,7 @@
 		"timeout_seconds": 45,
 		"aws_region": "us-east-1",
 		"django_settings": "twitch_hdt_ebs.settings",
-		"s3_bucket": "hearthsim-zappa",
+		"s3_bucket": "hearthsim-lambda-artifacts",
 		"delete_s3_zip": false,
 		"keep_warm": true,
 		"route53_enabled": false,
