@@ -20,7 +20,9 @@ class TwitchClient:
 
 	USER_AGENT = "HearthSim.TwitchClient/0.0"
 
-	def __init__(self, client_id, client_secret, owner_user_id, jwt_ttl=120):
+	def __init__(
+		self, client_id: str, client_secret: str, owner_user_id: str, jwt_ttl: int=120
+	) -> None:
 		self.client_id = client_id
 		self.client_secret = base64.b64decode(client_secret)
 		self.owner_user_id = owner_user_id
@@ -28,7 +30,7 @@ class TwitchClient:
 		self.jwt_algorithm = "HS256"
 		self.pubsub_perms = {"send": ["*"]}
 
-	def sign_jwt(self, exp, channel_id, role="external"):
+	def sign_jwt(self, exp: int, channel_id: str, role: str = "external") -> bytes:
 		payload = {
 			"exp": exp,
 			"user_id": self.owner_user_id,
@@ -40,12 +42,15 @@ class TwitchClient:
 
 		return jwt.encode(payload, self.client_secret, self.jwt_algorithm)
 
-	def get_ebs_authorization(self, channel_id):
+	def get_ebs_authorization(self, channel_id) -> str:
 		exp = int(datetime.datetime.now().timestamp()) + self.jwt_ttl
-		encoded_jwt = self.sign_jwt(exp, channel_id)
-		return "Bearer {jwt}".format(jwt=encoded_jwt.decode("utf-8"))
+		signed_jwt = self.sign_jwt(exp, channel_id).decode("utf-8")
 
-	def send_pubsub_message(self, channel_id, message, timeout=DEFAULT_PUBSUB_TIMEOUT):
+		return f"Bearer {signed_jwt}"
+
+	def send_pubsub_message(
+		self, channel_id: str, message: dict, timeout: int=DEFAULT_PUBSUB_TIMEOUT
+	):
 		endpoint = self.EBS_SEND_MESSAGE.format(channel_id=channel_id)
 		authorization = self.get_ebs_authorization(channel_id)
 
@@ -57,7 +62,9 @@ class TwitchClient:
 
 		return self.post(endpoint, data, authorization=authorization, timeout=timeout)
 
-	def set_extension_required_configuration(self, version, channel_id, value):
+	def set_extension_required_configuration(
+		self, version: str, channel_id: str, value: str
+	) -> requests.Response:
 		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION.format(
 			client_id=self.client_id, version=version
 		)
@@ -67,7 +74,7 @@ class TwitchClient:
 
 		return self.put(endpoint, data=data, params=params, authorization=authorization)
 
-	def get_headers(self, authorization):
+	def get_headers(self, authorization: str) -> dict:
 		headers = {
 			"Client-Id": self.client_id,
 			"User-Agent": self.USER_AGENT,
@@ -78,10 +85,16 @@ class TwitchClient:
 
 		return headers
 
-	def post(self, url, data, params=None, authorization=None, timeout=DEFAULT_TIMEOUT):
+	def post(
+		self, url: str, data: dict, params: dict=None,
+		authorization: str="", timeout: int=DEFAULT_TIMEOUT
+	) -> requests.Response:
 		headers = self.get_headers(authorization)
 		return requests.post(url, params=params, headers=headers, json=data, timeout=timeout)
 
-	def put(self, url, data, params=None, authorization=None, timeout=DEFAULT_TIMEOUT):
+	def put(
+		self, url: str, data: dict, params: dict=None,
+		authorization: str="", timeout: int=DEFAULT_TIMEOUT
+	) -> requests.Response:
 		headers = self.get_headers(authorization)
 		return requests.put(url, params=params, headers=headers, json=data, timeout=timeout)

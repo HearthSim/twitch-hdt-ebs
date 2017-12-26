@@ -19,13 +19,13 @@ from rest_framework.views import APIView
 from .twitch import TwitchClient
 
 
-def _extract_twitch_client_id(request):
+def _extract_twitch_client_id(request) -> str:
 	client_id = request.META.get("HTTP_X_TWITCH_CLIENT_ID", "")
 	if not client_id:
 		raise ValidationError({"detail": "Missing X-Twitch-Client-Id header"})
 
 	if client_id not in settings.EBS_APPLICATIONS:
-		raise ValidationError({"detail": "Invalid Twitch Client ID: {}".format(client_id)})
+		raise ValidationError({"detail": f"Invalid Twitch Client ID: {client_id}"})
 
 	return client_id
 
@@ -64,7 +64,7 @@ class TwitchJWTAuthentication(BaseAuthentication):
 		except SocialAccount.DoesNotExist:
 			raise AuthenticationFailed({"error": "account_not_linked", "detail": payload["user_id"]})
 
-		return (twitch_account.user, twitch_account)
+		return twitch_account.user, twitch_account
 
 
 class HasValidTwitchClientId(BasePermission):
@@ -106,14 +106,14 @@ class BaseTwitchAPIView(APIView):
 		IsAuthenticated, CanPublishToTwitchChannel, HasValidTwitchClientId,
 	)
 
-	def get_twitch_client(self):
+	def get_twitch_client(self) -> TwitchClient:
 		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
 		return TwitchClient(
 			self.request.twitch_client_id, config["secret"], config["owner_id"],
 			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
 		)
 
-	def get_ebs_client_id(self):
+	def get_ebs_client_id(self) -> str:
 		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
 		return config["ebs_client_id"]
 
@@ -121,7 +121,7 @@ class BaseTwitchAPIView(APIView):
 class PubSubSendView(BaseTwitchAPIView):
 	serializer_class = PubSubMessageSerializer
 
-	def post(self, request, format=None):
+	def post(self, request, format=None) -> Response:
 		twitch_client = self.get_twitch_client()
 		serializer = self.serializer_class(data=request.data)
 		serializer.is_valid(raise_exception=True)
@@ -143,7 +143,7 @@ class PubSubSendView(BaseTwitchAPIView):
 class ExtensionSetupView(BaseTwitchAPIView):
 	authentication_classes = (TwitchJWTAuthentication, )
 
-	def post(self, request, format=None):
+	def post(self, request, format=None) -> Response:
 		twitch_client = self.get_twitch_client()
 
 		version = request.META.get("HTTP_X_TWITCH_EXTENSION_VERSION", "")

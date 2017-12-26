@@ -85,8 +85,8 @@ DATABASES = {
 	},
 }
 
-TEMPLATES = []
-AUTH_PASSWORD_VALIDATORS = []
+TEMPLATES: list = []
+AUTH_PASSWORD_VALIDATORS: list = []
 
 
 # Disable DRF browsable API (it requires templates to be setup)
