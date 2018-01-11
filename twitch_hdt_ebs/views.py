@@ -170,7 +170,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			"deck": deck_data,
 			"hero": deckobj.get("hero"),
 			"format": deckobj.get("format"),
-			"socialaccount_id": self.request.auth.id,
+			"twitch_user_id": self.request.twitch_user_id,
 		}, timeout=timeout)
 
 		return True
