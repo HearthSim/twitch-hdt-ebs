@@ -4,6 +4,7 @@ import json
 import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from django.core.cache import caches
 from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
@@ -126,18 +127,53 @@ class PubSubSendView(BaseTwitchAPIView):
 		serializer = self.serializer_class(data=request.data)
 		serializer.is_valid(raise_exception=True)
 
-		data = {
+		data = serializer.validated_data["data"]
+		try:
+			self.cache_deck_data(data)
+		except Exception:
+			from raven.contrib.django.raven_compat.models import client as sentry
+			sentry.captureException()
+			# Non-critical, move on.
+
+		pubsub_data = {
 			"type": serializer.validated_data["type"],
 			"data": serializer.validated_data["data"],
 			"config": request.user.settings.get("twitch_ebs", {}),
 		}
-		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, data)
+		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, pubsub_data)
 
 		return Response({
 			"status": resp.status_code,
 			"content_type": resp.headers.get("content-type"),
 			"content": resp.content,
 		})
+
+	def cache_deck_data(self, data, timeout: int=600) -> bool:
+		import random
+
+		if random.random() < 0.99:
+			# Only cache 1% of requests
+			# TODO: Drop in favour of a game_start packet
+			return False
+
+		deckobj = data.get("player", {}).get("deck", {})
+		deck_data = []
+
+		for dbf_id, current, initial in deckobj.get("cards", []):
+			for i in range(initial):
+				deck_data.append(dbf_id)
+
+		deck_data.sort()
+
+		cache_key = f"twitch_{self.request.twitch_user_id}"
+		caches["default"].set(cache_key, {
+			"deck": deck_data,
+			"hero": deckobj.get("hero"),
+			"format": deckobj.get("format"),
+			"socialaccount_id": self.request.auth.id,
+		}, timeout=timeout)
+
+		return True
 
 
 class ExtensionSetupView(BaseTwitchAPIView):
