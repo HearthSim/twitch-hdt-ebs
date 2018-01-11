@@ -91,6 +91,8 @@ CACHES = {
 		"LOCATION": params.get("REDIS_CACHE_URL", "redis://127.0.0.1:6379/1"),
 		"OPTIONS": {
 			"CLIENT_CLASS": "django_redis.client.DefaultClient",
+			"COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+			"SERIALIZER": "django_redis.serializers.json.JSONSerializer",
 			"SOCKET_CONNECT_TIMEOUT": 3,
 			"SOCKET_TIMEOUT": 3,
 		}
