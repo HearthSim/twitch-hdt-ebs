@@ -14,7 +14,7 @@ from rest_framework.exceptions import (
 )
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import CharField, DictField, Serializer
+from rest_framework.serializers import BooleanField, CharField, DictField, Serializer
 from rest_framework.views import APIView
 
 from .twitch import TwitchClient
@@ -220,6 +220,7 @@ class ConfigSerializer(Serializer):
 	deck_position = CharField(default="")
 	hidden = CharField(default="")
 	game_offset_horizontal = CharField(default="")
+	promote_on_hsreplaynet = BooleanField(default=True)
 
 
 class SetConfigView(BaseTwitchAPIView):
