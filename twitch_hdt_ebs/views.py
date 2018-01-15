@@ -128,12 +128,8 @@ class PubSubSendView(BaseTwitchAPIView):
 		serializer.is_valid(raise_exception=True)
 
 		data = serializer.validated_data["data"]
-		try:
+		if serializer.validated_data["type"] == "game_start":
 			self.cache_deck_data(data)
-		except Exception:
-			from raven.contrib.django.raven_compat.models import client as sentry
-			sentry.captureException()
-			# Non-critical, move on.
 
 		pubsub_data = {
 			"type": serializer.validated_data["type"],
@@ -149,17 +145,9 @@ class PubSubSendView(BaseTwitchAPIView):
 		})
 
 	def cache_deck_data(self, data, timeout: int=600) -> bool:
-		import random
-
-		if random.random() < 0.99:
-			# Only cache 1% of requests
-			# TODO: Drop in favour of a game_start packet
-			return False
-
-		deckobj = data.get("player", {}).get("deck", {})
 		deck_data = []
 
-		for dbf_id, current, initial in deckobj.get("cards", []):
+		for dbf_id, current, initial in data.get("cards", []):
 			for i in range(initial):
 				deck_data.append(dbf_id)
 
@@ -168,8 +156,8 @@ class PubSubSendView(BaseTwitchAPIView):
 		cache_key = f"twitch_{self.request.twitch_user_id}"
 		caches["default"].set(cache_key, {
 			"deck": deck_data,
-			"hero": deckobj.get("hero"),
-			"format": deckobj.get("format"),
+			"hero": data.get("hero"),
+			"format": data.get("format"),
 			"twitch_user_id": self.request.twitch_user_id,
 		}, timeout=timeout)
 
