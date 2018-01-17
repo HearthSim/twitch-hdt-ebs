@@ -144,7 +144,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			"content": resp.content,
 		})
 
-	def cache_deck_data(self, data, timeout: int=600) -> bool:
+	def cache_deck_data(self, data, timeout: int=1200) -> bool:
 		deck_data = []
 
 		for dbf_id, current, initial in data.get("cards", []):
