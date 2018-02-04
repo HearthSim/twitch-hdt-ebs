@@ -132,7 +132,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		data = serializer.validated_data["data"]
 		if serializer.validated_data["type"] == "game_start":
-			self.cache_deck_data(data)
+			self.cache_deck_data(data, serializer.validated_data["version"])
 
 		pubsub_data = {
 			"type": serializer.validated_data["type"],
@@ -147,20 +147,29 @@ class PubSubSendView(BaseTwitchAPIView):
 			"content": resp.content,
 		})
 
-	def cache_deck_data(self, data, timeout: int=1200) -> bool:
-		deck_data = []
+	def cache_deck_data(self, data, version: int, timeout: int=1200) -> bool:
 
-		for dbf_id, current, initial in data.get("cards", []):
+		if version >= 3:
+			deck_data = data.get("decks", {})
+		else:
+			deck_data = data
+
+		cards_list = []
+
+		for dbf_id, current, initial in deck_data.get("cards", []):
 			for i in range(initial):
-				deck_data.append(dbf_id)
+				cards_list.append(dbf_id)
 
-		deck_data.sort()
+		cards_list.sort()
 
 		cache_key = f"twitch_{self.request.twitch_user_id}"
 		caches["default"].set(cache_key, {
-			"deck": deck_data,
-			"hero": data.get("hero"),
-			"format": data.get("format"),
+			"deck": cards_list,
+			"hero": deck_data.get("hero"),
+			"format": deck_data.get("format"),
+			"rank": data.get("rank"),
+			"legend_rank": data.get("legend_rank", 0),
+			"game_type": data.get("game_type", 0),
 			"twitch_user_id": self.request.twitch_user_id,
 		}, timeout=timeout)
 
