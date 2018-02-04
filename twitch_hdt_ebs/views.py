@@ -14,7 +14,9 @@ from rest_framework.exceptions import (
 )
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import BooleanField, CharField, DictField, Serializer
+from rest_framework.serializers import (
+	BooleanField, CharField, DictField, IntegerField, Serializer
+)
 from rest_framework.views import APIView
 
 from .twitch import TwitchClient
@@ -99,6 +101,7 @@ class CanPublishToTwitchChannel(BasePermission):
 class PubSubMessageSerializer(Serializer):
 	type = CharField()
 	data = DictField()
+	version = IntegerField(default=0)
 
 
 class BaseTwitchAPIView(APIView):
