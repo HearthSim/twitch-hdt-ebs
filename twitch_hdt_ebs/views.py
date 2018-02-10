@@ -148,11 +148,11 @@ class PubSubSendView(BaseTwitchAPIView):
 		})
 
 	def cache_deck_data(self, data, version: int, timeout: int=1200) -> bool:
+		if version < 3:
+			# Discard old HDT versions
+			return False
 
-		if version >= 3:
-			deck_data = data.get("decks", {})
-		else:
-			deck_data = data
+		deck_data = data.get("deck", {})
 
 		cards_list = []
 
