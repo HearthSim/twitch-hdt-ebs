@@ -10,7 +10,6 @@
 		"django_settings": "twitch_hdt_ebs.settings",
 		"s3_bucket": "hearthsim-lambda-artifacts",
 		"delete_s3_zip": false,
-		"keep_warm": true,
 		"route53_enabled": false,
 		"vpc_config": {
 			"SubnetIds": ["subnet-d0f9b6fd"],
@@ -45,8 +44,7 @@
 		"cloudwatch_data_trace": true,
 		"cloudwatch_log_level": "INFO",
 		"debug": true,
-		"log_level": "DEBUG",
-		"xray_tracing": true
+		"log_level": "DEBUG"
 	},
 	"live": {
 		"extends": "base",
