@@ -231,7 +231,7 @@ class SetConfigView(BaseTwitchAPIView):
 	def get(self, request, format=None):
 		user_settings = request.user.settings.get(self.settings_key, {})
 		serializer = self.serializer_class(data=user_settings)
-		serializer.is_valid()
+		serializer.is_valid(raise_exception=True)
 		return Response(serializer.data)
 
 	def put(self, request, format=None):
