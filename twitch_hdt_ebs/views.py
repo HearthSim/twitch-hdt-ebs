@@ -217,9 +217,9 @@ class ExtensionSetupView(BaseTwitchAPIView):
 
 
 class ConfigSerializer(Serializer):
-	deck_position = CharField(default="")
-	hidden = CharField(default="")
-	game_offset_horizontal = CharField(default="")
+	deck_position = CharField(default="topright")
+	hidden = CharField(default="0")
+	game_offset_horizontal = CharField(default="0")
 	promote_on_hsreplaynet = BooleanField(default=True)
 
 
