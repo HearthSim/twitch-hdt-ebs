@@ -13,7 +13,7 @@
 		"route53_enabled": false,
 		"vpc_config": {
 			"SubnetIds": ["subnet-d0f9b6fd"],
-			"SecurityGroupIds": ["sg-6200a413", "sg-8816b2f9", "sg-9b9736ea"]
+			"SecurityGroupIds": ["sg-4edf023b", "sg-6200a413", "sg-8816b2f9", "sg-9b9736ea"]
 		},
 		"exclude": [
 			"boto3*",
