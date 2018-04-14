@@ -1,7 +1,7 @@
 """
 Django configuration
 
-https://docs.djangoproject.com/en/1.11/topics/settings/
+https://docs.djangoproject.com/en/2.0/topics/settings/
 """
 
 import os
@@ -51,7 +51,6 @@ INSTALLED_APPS = [
 	"rest_framework",
 	"corsheaders",
 	"hearthsim.identity.accounts",
-	"hearthsim.identity.api",
 	"hearthsim.identity.oauth2",
 ]
 
