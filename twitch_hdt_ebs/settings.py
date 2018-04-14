@@ -136,6 +136,7 @@ EBS_APPLICATIONS = {
 		"ebs_client_id": params.get("HDT_EBS_CLIENT_ID", ""),
 	}
 }
+EBS_JWT_ALGORITHMS = ["HS256"]
 EBS_JWT_TTL_SECONDS = 120
 EBS_JWT_VERIFY = not DEBUG
 
