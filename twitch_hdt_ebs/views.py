@@ -49,7 +49,9 @@ class TwitchJWTAuthentication(BaseAuthentication):
 		decoded_secret = base64.b64decode(secret)
 
 		try:
-			payload = jwt.decode(token, decoded_secret, verify=settings.EBS_JWT_VERIFY)
+			payload = jwt.decode(token, decoded_secret, options={
+				"verify_signature": settings.EBS_JWT_VERIFY
+			})
 		except jwt.exceptions.DecodeError as e:
 			raise AuthenticationFailed({"error": "invalid_jwt", "detail": str(e)})
 		except jwt.exceptions.ExpiredSignatureError as e:
