@@ -84,6 +84,7 @@ DATABASES = {
 	},
 }
 
+CACHE_READONLY = bool(int(params.get("REDIS_READONLY", 0)))
 CACHES = {
 	"default": {
 		"BACKEND": "django_redis.cache.RedisCache",

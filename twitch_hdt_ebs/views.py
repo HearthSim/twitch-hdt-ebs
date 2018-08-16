@@ -169,6 +169,10 @@ class PubSubSendView(BaseTwitchAPIView):
 			# Discard old HDT versions
 			return False
 
+		if settings.CACHE_READONLY:
+			# Refuse to write in read-only mode
+			return False
+
 		deck_data = data.get("deck", {})
 
 		cards_list = []
