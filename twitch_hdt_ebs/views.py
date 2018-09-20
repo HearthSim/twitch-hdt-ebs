@@ -6,6 +6,8 @@ import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.core.cache import caches
+from django.http import HttpResponse
+from django.views.generic import View
 from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
@@ -264,6 +266,11 @@ class SetConfigView(BaseTwitchAPIView):
 		request.user.save()
 
 		return Response(serializer.validated_data)
+
+
+class PingView(View):
+	def get(self, request):
+		return HttpResponse("OK", content_type="text/plain")
 
 
 def exception_handler(exc, context):
