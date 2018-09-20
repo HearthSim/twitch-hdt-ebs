@@ -6,6 +6,7 @@
 		"runtime": "python3.6",
 		"memory_size": 128,
 		"timeout_seconds": 45,
+		"touch": false,
 		"aws_region": "us-east-1",
 		"django_settings": "twitch_hdt_ebs.settings",
 		"s3_bucket": "hearthsim-lambda-artifacts",
