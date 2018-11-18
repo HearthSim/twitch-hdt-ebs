@@ -166,7 +166,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			"content": resp.content,
 		})
 
-	def cache_deck_data(self, data, version: int, timeout: int=1200) -> bool:
+	def cache_deck_data(self, data, version: int, timeout: int = 1200) -> bool:
 		if version < 3:
 			# Discard old HDT versions
 			return False
