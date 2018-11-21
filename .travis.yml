@@ -1,5 +1,4 @@
 # https://travis-ci.org/HearthSim/twitch-hdt-ebs
-sudo: false
 language: python
 python: "3.6"
 
