@@ -5,6 +5,7 @@ https://docs.djangoproject.com/en/2.0/topics/settings/
 """
 
 import os
+from typing import Any, cast
 
 from hearthsim.instrumentation.ssm import get_secure_parameters
 
@@ -22,7 +23,7 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 else:
 	DEBUG = True
 	ALLOWED_HOSTS = ["*"]
-	sentry_sdk = None
+	sentry_sdk = cast(Any, None)
 
 
 params = get_secure_parameters("twitch_ebs", debug=DEBUG)
