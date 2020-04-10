@@ -114,7 +114,7 @@ REST_FRAMEWORK = {
 
 # DRF CORS handling
 CORS_ALLOW_METHODS = ("OPTIONS", "GET", "POST", "PUT")
-CORS_ORIGIN_REGEX_WHITELIST = (r"^https://(\w+)\.ext-twitch\.tv$", )
+CORS_ORIGIN_WHITELIST = ["https://apwln3g3ia45kk690tzabfp525h9e1.ext-twitch.tv"]
 CORS_ALLOW_HEADERS = (
 	"accept",
 	"accept-encoding",
