@@ -11,6 +11,7 @@ from django.views.generic import View
 from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
+from requests import Timeout
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import (
 	AuthenticationFailed, PermissionDenied, ValidationError
@@ -22,6 +23,7 @@ from rest_framework.serializers import (
 )
 from rest_framework.views import APIView
 
+from .exceptions import TwitchAPITimeout
 from .twitch import TwitchClient
 
 
@@ -149,7 +151,10 @@ class PubSubSendView(BaseTwitchAPIView):
 			"data": serializer.validated_data["data"],
 			"config": request.user.settings.get("twitch_ebs", {}),
 		}
-		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, pubsub_data)
+		try:
+			resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, pubsub_data)
+		except Timeout:
+			raise TwitchAPITimeout()
 
 		write_point(
 			"pubsub_message",
@@ -159,11 +164,14 @@ class PubSubSendView(BaseTwitchAPIView):
 			message_type=serializer.validated_data["type"]
 		)
 
-		return Response({
-			"status": resp.status_code,
-			"content_type": resp.headers.get("content-type"),
-			"content": resp.content,
-		})
+		return Response(
+			status=200 if resp.status_code in (200, 204) else 502,
+			data={
+				"status": resp.status_code,
+				"content_type": resp.headers.get("content-type"),
+				"content": resp.content,
+			}
+		)
 
 	def cache_deck_data(self, data, version: int, timeout: int = 1200) -> bool:
 		if version < 3:
@@ -216,9 +224,12 @@ class ExtensionSetupView(BaseTwitchAPIView):
 
 		value = "COMPLETE"
 
-		resp = twitch_client.set_extension_required_configuration(
-			version=version, value=value, channel_id=self.request.twitch_user_id
-		)
+		try:
+			resp = twitch_client.set_extension_required_configuration(
+				version=version, value=value, channel_id=self.request.twitch_user_id
+			)
+		except Timeout:
+			raise TwitchAPITimeout()
 
 		if resp.status_code > 299:
 			try:
@@ -226,14 +237,15 @@ class ExtensionSetupView(BaseTwitchAPIView):
 			except json.JSONDecodeError:
 				twitch_data = None
 
-			data = {
-				"error": "bad_upstream",
-				"detail": "Unexpected response from Twitch API",
-				"upstream_data": twitch_data,
-				"upstream_status_code": resp.status_code,
-			}
-
-			return Response(data, status=502)
+			return Response(
+				status=502,
+				data={
+					"error": "bad_upstream",
+					"detail": "Unexpected response from Twitch API.",
+					"upstream_data": twitch_data,
+					"upstream_status_code": resp.status_code,
+				}
+			)
 
 		return Response({"required_configuration": value})
 
