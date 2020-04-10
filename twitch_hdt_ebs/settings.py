@@ -167,3 +167,12 @@ CSRF_COOKIE_SECURE = True
 
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = "DENY"
+
+
+SILENCED_SYSTEM_CHECKS = [
+	"fields.E300",
+	"fields.E307",
+	"security.W005",
+	"security.W008",
+	"security.W021",
+]
