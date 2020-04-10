@@ -151,14 +151,13 @@ class PubSubSendView(BaseTwitchAPIView):
 		}
 		resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, pubsub_data)
 
-		if serializer.validated_data["type"] != "board_state":
-			write_point(
-				"pubsub_message",
-				{"count": 1},
-				channel_id=self.request.twitch_user_id,
-				status_code=resp.status_code,
-				message_type=serializer.validated_data["type"]
-			)
+		write_point(
+			"pubsub_message",
+			{"count": 1},
+			channel_id=self.request.twitch_user_id,
+			status_code=resp.status_code,
+			message_type=serializer.validated_data["type"]
+		)
 
 		return Response({
 			"status": resp.status_code,
