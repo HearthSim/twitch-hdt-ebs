@@ -18,12 +18,10 @@ from rest_framework.exceptions import (
 )
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import (
-	BooleanField, CharField, DictField, IntegerField, Serializer
-)
 from rest_framework.views import APIView
 
 from .exceptions import TwitchAPITimeout
+from .serializers import ConfigSerializer, PubSubMessageSerializer
 from .twitch import TwitchClient
 
 
@@ -108,12 +106,6 @@ class CanPublishToTwitchChannel(BasePermission):
 
 		request.twitch_user_id = user_id
 		return True
-
-
-class PubSubMessageSerializer(Serializer):
-	type = CharField()
-	data = DictField()
-	version = IntegerField(default=0)
 
 
 class BaseTwitchAPIView(APIView):
@@ -248,13 +240,6 @@ class ExtensionSetupView(BaseTwitchAPIView):
 			)
 
 		return Response({"required_configuration": value})
-
-
-class ConfigSerializer(Serializer):
-	deck_position = CharField(default="topright")
-	hidden = CharField(default="0")
-	game_offset_horizontal = CharField(default="0")
-	promote_on_hsreplaynet = BooleanField(default=True)
 
 
 class SetConfigView(BaseTwitchAPIView):
