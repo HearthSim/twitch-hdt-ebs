@@ -138,10 +138,12 @@ class PubSubSendView(BaseTwitchAPIView):
 		if serializer.validated_data["type"] == "game_start":
 			self.cache_deck_data(data, serializer.validated_data["version"])
 
+		config = ConfigSerializer(instance=request.user.settings.get("twitch_ebs", {}))
+
 		pubsub_data = {
 			"type": serializer.validated_data["type"],
 			"data": serializer.validated_data["data"],
-			"config": request.user.settings.get("twitch_ebs", {}),
+			"config": config.data,
 		}
 		try:
 			resp = twitch_client.send_pubsub_message(self.request.twitch_user_id, pubsub_data)
