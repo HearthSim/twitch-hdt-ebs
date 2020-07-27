@@ -9,7 +9,7 @@ class PubSubMessageSerializer(serializers.Serializer):
 
 class ConfigSerializer(serializers.Serializer):
 	deck_position = serializers.CharField(default="topleft")
-	bobs_buddy_position = serializers.CharField(default="topcenter")
+	when_to_show_bobs_buddy = serializers.CharField(default="all")
 	hidden = serializers.CharField(default="0")
 	game_offset_horizontal = serializers.CharField(default="0")
 	promote_on_hsreplaynet = serializers.BooleanField(default=True)
