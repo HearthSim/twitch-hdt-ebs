@@ -10,8 +10,12 @@ from typing import Any, cast
 from hearthsim.instrumentation.ssm import get_secure_parameters
 
 
+SENTRY_ENVIRONMENT = None
+
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 	import sentry_sdk
+
+	SENTRY_ENVIRONMENT = os.environ.get("STAGE")  # from Zappa
 
 	DEBUG = False
 	ALLOWED_HOSTS = [
@@ -31,13 +35,17 @@ params = get_secure_parameters("twitch_ebs", debug=DEBUG)
 if sentry_sdk:
 	from sentry_sdk.integrations.django import DjangoIntegration
 	from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
+	from sentry_sdk.integrations.redis import RedisIntegration
 
 	sentry_sdk.init(
-		dsn=params.get("SENTRY_RAVEN_DSN", ""),
+		dsn=params.get("SENTRY_DSN", ""),
+		environment=SENTRY_ENVIRONMENT,
 		integrations=[
 			DjangoIntegration(),
 			AwsLambdaIntegration(),
-		]
+			RedisIntegration(),
+		],
+		auto_enabling_integrations=False,
 	)
 
 SECRET_KEY = params.get("DJANGO_SECRET_KEY", "<local>")
