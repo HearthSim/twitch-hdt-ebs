@@ -11,11 +11,26 @@ from hearthsim.instrumentation.ssm import get_secure_parameters
 
 
 SENTRY_ENVIRONMENT = None
+SENTRY_RELEASE = None
 
 if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 	import sentry_sdk
 
 	SENTRY_ENVIRONMENT = os.environ.get("STAGE")  # from Zappa
+
+	def get_deployment_uuid():
+		import json
+
+		path = os.path.join(os.path.dirname(__file__), "..", "package_info.json")
+		try:
+			with open(path, "r") as package_info_file:
+				data = package_info_file.read()
+		except IOError:
+			return None
+		package_info = json.loads(data)
+		return package_info.get("uuid")
+
+	SENTRY_RELEASE = get_deployment_uuid()
 
 	DEBUG = False
 	ALLOWED_HOSTS = [
@@ -40,6 +55,7 @@ if sentry_sdk:
 	sentry_sdk.init(
 		dsn=params.get("SENTRY_DSN", ""),
 		environment=SENTRY_ENVIRONMENT,
+		release=SENTRY_RELEASE,
 		integrations=[
 			DjangoIntegration(),
 			AwsLambdaIntegration(),
