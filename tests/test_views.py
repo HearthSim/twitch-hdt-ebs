@@ -74,6 +74,8 @@ def test_game_start(requests_mock, mocker, client):
 	class MockUser:
 		is_authenticated = True
 		settings = {}
+		id = 1
+		username = "MockUser"
 	mocker.patch(
 		"oauth2_provider.contrib.rest_framework.authentication.OAuth2Authentication.authenticate",
 		side_effect=lambda x: (MockUser, "xxx")

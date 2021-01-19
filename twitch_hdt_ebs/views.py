@@ -19,6 +19,7 @@ from rest_framework.exceptions import (
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from sentry_sdk import set_user
 
 from .exceptions import TwitchAPITimeout
 from .serializers import ConfigSerializer, PubSubMessageSerializer
@@ -124,6 +125,15 @@ class BaseTwitchAPIView(APIView):
 	def get_ebs_client_id(self) -> str:
 		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
 		return config["ebs_client_id"]
+
+	def initial(self, request, *args, **kwargs):
+		super().initial(request, *args, **kwargs)
+
+		if request.user.is_authenticated:
+			set_user({
+				"id": request.user.id,
+				"username": request.user.username,
+			})
 
 
 class PubSubSendView(BaseTwitchAPIView):
