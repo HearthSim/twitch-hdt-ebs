@@ -3,8 +3,7 @@ language: python
 python: "3.6"
 
 env:
-  - TOXENV=py36-django21
-  - TOXENV=py36-djangomaster
+  - TOXENV=py36-django22
   - TOXENV=flake8
   - TOXENV=mypy
 
