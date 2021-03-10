@@ -1,5 +1,5 @@
 # Twitch HDT EBS
-[![Build Status](https://api.travis-ci.org/HearthSim/twitch-hdt-ebs.svg?branch=master)](https://travis-ci.org/HearthSim/twitch-hdt-ebs)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/hearthsim/hdt-twitch-ebs/Continuous%20Integration)](https://github.com/HearthSim/hdt-twitch-ebs/actions/workflows/ci.yml)
 
 Twitch Extension Backend Service for [Hearthstone Deck Tracker](https://hsdecktracker.net).
 
