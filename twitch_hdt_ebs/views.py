@@ -57,7 +57,8 @@ class TwitchJWTAuthentication(BaseAuthentication):
 				decoded_secret,
 				algorithms=settings.EBS_JWT_ALGORITHMS,
 				options={
-					"verify_signature": settings.EBS_JWT_VERIFY
+					"require_exp": True,
+					"verify_exp": True
 				}
 			)
 		except jwt.exceptions.DecodeError as e:
