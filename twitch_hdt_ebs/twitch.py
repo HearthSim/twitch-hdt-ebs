@@ -11,12 +11,11 @@ DEFAULT_PUBSUB_TIMEOUT = 5
 
 
 class TwitchClient:
-	API_ROOT = "https://api.twitch.tv"
-	API_EBS_ROOT = API_ROOT + "/extensions"
+	API_ROOT = "https://api.twitch.tv/helix"
 	API_EXTENSION_REQUIRED_CONFIGURATION = (
-		API_EBS_ROOT + "/{client_id}/{version}/required_configuration"
+		API_ROOT + "/extensions/required_configuration"
 	)
-	EBS_SEND_MESSAGE = API_EBS_ROOT + "/message/{channel_id}"
+	EBS_SEND_MESSAGE = API_ROOT + "/extensions/pubsub"
 
 	USER_AGENT = "HearthSim.TwitchClient/0.0"
 
@@ -28,7 +27,7 @@ class TwitchClient:
 		self.owner_user_id = owner_user_id
 		self.jwt_ttl = jwt_ttl
 		self.jwt_algorithm = "HS256"
-		self.pubsub_perms = {"send": ["*"]}
+		self.pubsub_perms = {"send": ["broadcast"]}
 
 	def sign_jwt(self, exp: int, channel_id: str, role: str = "external") -> bytes:
 		payload = {
@@ -51,13 +50,13 @@ class TwitchClient:
 	def send_pubsub_message(
 		self, channel_id: str, message: dict, timeout: int = DEFAULT_PUBSUB_TIMEOUT
 	):
-		endpoint = self.EBS_SEND_MESSAGE.format(channel_id=channel_id)
+		endpoint = self.EBS_SEND_MESSAGE
 		authorization = self.get_ebs_authorization(channel_id)
 
 		data = {
-			"content_type": "application/json",
 			"message": json.dumps(message),
-			"targets": ["broadcast"],
+			"broadcaster_id": channel_id,
+			"target": ["broadcast"],
 		}
 
 		return self.post(endpoint, data, authorization=authorization, timeout=timeout)
@@ -65,11 +64,13 @@ class TwitchClient:
 	def set_extension_required_configuration(
 		self, version: str, channel_id: str, value: str
 	) -> requests.Response:
-		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION.format(
-			client_id=self.client_id, version=version
-		)
-		params = {"channel_id": channel_id}
-		data = {"required_configuration": value}
+		endpoint = self.API_EXTENSION_REQUIRED_CONFIGURATION
+		params = {"broadcaster_id": channel_id}
+		data = {
+			"required_configuration": value,
+			"extension_id": self.client_id,
+			"extension_version": version
+		}
 		authorization = self.get_ebs_authorization(channel_id)
 
 		return self.put(endpoint, data=data, params=params, authorization=authorization)

@@ -1,1 +1,3 @@
 twitch_hdt_ebs/local_settings.py
+.idea
+.tox

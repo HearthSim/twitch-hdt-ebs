@@ -53,7 +53,7 @@ def test_game_start(requests_mock, mocker, client):
 		48158, 48487
 	]
 
-	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE.format(channel_id=1), status_code=204)
+	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE, status_code=204)
 
 	def set_user_id(request, view):
 		request.twitch_user_id = "1"
