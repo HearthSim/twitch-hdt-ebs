@@ -295,10 +295,16 @@ class VodUrlView(BaseTwitchAPIView):
 			status_code=resp.status_code
 		)
 
+		data = resp.content
+		if resp.status_code == 200:
+			json = resp.json()
+			if len(json.get("data", [])) > 0:
+				data = json["data"][0]
+
 		return Response(
 			status=resp.status_code,
 			headers=resp.headers,
-			data=resp.json()
+			data=data
 		)
 
 

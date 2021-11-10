@@ -141,30 +141,28 @@ def test_game_start(requests_mock, mocker, client):
 def test_get_vod_url(client, requests_mock, mocker):
 	mock_authentication(mocker)
 
-	data = {
-		"data": [
-			{
-				"id": "335921245",
-				"title": "Twitch Developers 101",
-				"created_at": "2018-11-14T21:30:18Z",
-				"url": "https://www.twitch.tv/videos/335921245",
-				"viewable": "public",
-				"view_count": 1863062,
-				"language": "en",
-				"duration": "3m21s"
-			}
-		],
-		"pagination": {}
+	vod_data = {
+		"id": "335921245",
+		"title": "Twitch Developers 101",
+		"created_at": "2018-11-14T21:30:18Z",
+		"url": "https://www.twitch.tv/videos/335921245",
+		"viewable": "public",
+		"view_count": 1863062,
+		"language": "en",
+		"duration": "3m21s"
 	}
 	requests_mock.get(
 		"https://api.twitch.tv/helix/videos?user_id=13579",
-		json=data
+		json={
+			"data": [vod_data],
+			"pagination": {}
+		}
 	)
 
 	response = client.get("/vod_url/13579")
 
 	assert response.status_code == 200
-	assert response.json() == data
+	assert response.json() == vod_data
 
 
 def test_ping_view(client):
