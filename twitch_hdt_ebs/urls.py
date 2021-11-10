@@ -14,5 +14,6 @@ urlpatterns = [
 	path("config/", views.SetConfigView.as_view(), name="ebs_config"),
 	path("setup/", views.ExtensionSetupView.as_view(), name="ebs_setup"),
 	path("send/", views.PubSubSendView.as_view(), name="ebs_pubsub_send"),
+	path("vod_url/<user_id>", views.VodUrlView.as_view(), name="ebs_vod_url"),
 	path("ping/", views.PingView.as_view()),
 ]

@@ -22,6 +22,34 @@ def test_send_view(client):
 	assert response.status_code == 401
 
 
+def mock_authentication(mocker):
+	def set_user_id(request, view):
+		request.twitch_user_id = "1"
+		return True
+	mocker.patch(
+		"twitch_hdt_ebs.views.CanPublishToTwitchChannel.has_permission",
+		side_effect=set_user_id
+	)
+
+	def set_client_id(request, view):
+		request.twitch_client_id = "1a"
+		return True
+	mocker.patch(
+		"twitch_hdt_ebs.views.HasValidTwitchClientId.has_permission",
+		side_effect=set_client_id
+	)
+
+	class MockUser:
+		is_authenticated = True
+		settings = {}
+		id = 1
+		username = "MockUser"
+	mocker.patch(
+		"oauth2_provider.contrib.rest_framework.authentication.OAuth2Authentication.authenticate",
+		side_effect=lambda x: (MockUser, "xxx")
+	)
+
+
 @override_settings(
 	EBS_APPLICATIONS={
 		"1a": {
@@ -55,31 +83,7 @@ def test_game_start(requests_mock, mocker, client):
 
 	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE, status_code=204)
 
-	def set_user_id(request, view):
-		request.twitch_user_id = "1"
-		return True
-	mocker.patch(
-		"twitch_hdt_ebs.views.CanPublishToTwitchChannel.has_permission",
-		side_effect=set_user_id
-	)
-
-	def set_client_id(request, view):
-		request.twitch_client_id = "1a"
-		return True
-	mocker.patch(
-		"twitch_hdt_ebs.views.HasValidTwitchClientId.has_permission",
-		side_effect=set_client_id
-	)
-
-	class MockUser:
-		is_authenticated = True
-		settings = {}
-		id = 1
-		username = "MockUser"
-	mocker.patch(
-		"oauth2_provider.contrib.rest_framework.authentication.OAuth2Authentication.authenticate",
-		side_effect=lambda x: (MockUser, "xxx")
-	)
+	mock_authentication(mocker)
 
 	response = client.post(
 		"/send/",
@@ -117,6 +121,50 @@ def test_game_start(requests_mock, mocker, client):
 	assert stored["rank"] is None
 	assert stored["legend_rank"] == 1337
 	assert stored["deck"] == DECK_LIST_FLAT
+
+
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_get_vod_url(client, requests_mock, mocker):
+	mock_authentication(mocker)
+
+	data = {
+		"data": [
+			{
+				"id": "335921245",
+				"title": "Twitch Developers 101",
+				"created_at": "2018-11-14T21:30:18Z",
+				"url": "https://www.twitch.tv/videos/335921245",
+				"viewable": "public",
+				"view_count": 1863062,
+				"language": "en",
+				"duration": "3m21s"
+			}
+		],
+		"pagination": {}
+	}
+	requests_mock.get(
+		"https://api.twitch.tv/helix/videos?user_id=13579",
+		json=data
+	)
+
+	response = client.get("/vod_url/13579")
+
+	assert response.status_code == 200
+	assert response.json() == data
 
 
 def test_ping_view(client):

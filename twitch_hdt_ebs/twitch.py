@@ -5,6 +5,8 @@ import json
 import jwt
 import requests
 
+from twitch_hdt_ebs.utils import get_twitch_app_access_token
+
 
 DEFAULT_TIMEOUT = 60
 DEFAULT_PUBSUB_TIMEOUT = 5
@@ -15,6 +17,7 @@ class TwitchClient:
 	API_EXTENSION_REQUIRED_CONFIGURATION = (
 		API_ROOT + "/extensions/required_configuration"
 	)
+	API_GET_VIDEOS = API_ROOT + "/videos"
 	EBS_SEND_MESSAGE = API_ROOT + "/extensions/pubsub"
 
 	USER_AGENT = "HearthSim.TwitchClient/0.0"
@@ -75,6 +78,18 @@ class TwitchClient:
 
 		return self.put(endpoint, data=data, params=params, authorization=authorization)
 
+	def get_user_videos(self, user_id: str):
+		endpoint = self.API_GET_VIDEOS
+		authorization = get_twitch_app_access_token()
+		params = {
+			"user_id": user_id,
+			"first": 1,
+			"period": "day",
+			"sort": "time"
+		}
+
+		return self.get(endpoint, params=params, authorization=authorization)
+
 	def get_headers(self, authorization: str) -> dict:
 		headers = {
 			"Client-Id": self.client_id,
@@ -85,6 +100,13 @@ class TwitchClient:
 			headers["Authorization"] = authorization
 
 		return headers
+
+	def get(
+		self, url: str, params: dict = None,
+		authorization: str = "", timeout: int = DEFAULT_TIMEOUT
+	) -> requests.Response:
+		headers = self.get_headers(authorization)
+		return requests.get(url, params=params, headers=headers, timeout=timeout)
 
 	def post(
 		self, url: str, data: dict, params: dict = None,

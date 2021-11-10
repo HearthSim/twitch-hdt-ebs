@@ -277,6 +277,31 @@ class SetConfigView(BaseTwitchAPIView):
 		return Response(serializer.validated_data)
 
 
+class VodUrlView(BaseTwitchAPIView):
+	serializer_class = PubSubMessageSerializer
+
+	def get(self, request, user_id) -> Response:
+		twitch_client = self.get_twitch_client()
+
+		try:
+			resp = twitch_client.get_user_videos(user_id)
+		except Timeout:
+			raise TwitchAPITimeout()
+
+		write_point(
+			"get_videos_request",
+			{"count": 1},
+			user_id=user_id,
+			status_code=resp.status_code
+		)
+
+		return Response(
+			status=resp.status_code,
+			headers=resp.headers,
+			data=resp.json()
+		)
+
+
 class PingView(View):
 	def get(self, request):
 		return HttpResponse("OK", content_type="text/plain")

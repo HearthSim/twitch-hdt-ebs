@@ -13,3 +13,9 @@ class ConfigSerializer(serializers.Serializer):
 	hidden = serializers.CharField(default="0")
 	game_offset_horizontal = serializers.CharField(default="0")
 	promote_on_hsreplaynet = serializers.BooleanField(default=True)
+
+
+class TwitchOAuthTokenResponseSerializer(serializers.Serializer):
+	access_token = serializers.CharField(required=True, allow_blank=False)
+	expires_in = serializers.IntegerField(required=True)
+	token_type = serializers.CharField(required=True)
