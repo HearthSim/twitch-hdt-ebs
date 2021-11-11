@@ -80,7 +80,7 @@ class TwitchClient:
 
 	def get_user_videos(self, user_id: str):
 		endpoint = self.API_GET_VIDEOS
-		authorization = get_twitch_app_access_token()
+		authorization = f"Bearer {get_twitch_app_access_token()}"
 		params = {
 			"user_id": user_id,
 			"first": 1,
