@@ -113,7 +113,7 @@ def test_game_start(requests_mock, mocker, client):
 	body = response.json()
 	assert body["status"] == 204
 
-	stored = caches["default"].get(f"twitch_{TWITCH_USER_ID}")
+	stored = caches["default"].get(f"twitch_hdt_live_id_{TWITCH_USER_ID}")
 	assert stored
 	assert stored["hero"] == 930
 	assert stored["format"] == 1

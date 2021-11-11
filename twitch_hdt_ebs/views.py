@@ -197,7 +197,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		cards_list.sort()
 
-		cache_key = f"twitch_{self.request.twitch_user_id}"
+		cache_key = f"twitch_hdt_live_id_{self.request.twitch_user_id}"
 		caches["default"].set(cache_key, {
 			"deck": cards_list,
 			"hero": deck_data.get("hero"),
