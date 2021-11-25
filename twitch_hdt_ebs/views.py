@@ -277,6 +277,38 @@ class SetConfigView(BaseTwitchAPIView):
 		return Response(serializer.validated_data)
 
 
+class LiveCheckView(BaseTwitchAPIView):
+	serializer_class = PubSubMessageSerializer
+
+	def get(self, request, user_id) -> Response:
+		twitch_client = self.get_twitch_client()
+
+		try:
+			resp = twitch_client.get_user_stream(user_id)
+		except Timeout:
+			raise TwitchAPITimeout()
+
+		write_point(
+			"live_check_request",
+			{"count": 1},
+			user_id=user_id,
+			status_code=resp.status_code
+		)
+
+		data = {
+			"is_live": False
+		}
+		if resp.status_code == 200:
+			json = resp.json()
+			data["is_live"] = len(json.get("data", [])) > 0
+
+		return Response(
+			status=resp.status_code,
+			headers=resp.headers,
+			data=data
+		)
+
+
 class VodUrlView(BaseTwitchAPIView):
 	serializer_class = PubSubMessageSerializer
 

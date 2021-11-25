@@ -138,6 +138,94 @@ def test_game_start(requests_mock, mocker, client):
 	},
 	CACHE_READONLY=False,
 )
+def test_live_check_on_active_user(client, requests_mock, mocker):
+	mock_authentication(mocker)
+
+	stream_data = {
+		"id": "41375541868",
+		"user_id": "459331509",
+		"user_login": "auronplay",
+		"user_name": "auronplay",
+		"game_id": "494131",
+		"game_name": "Little Nightmares",
+		"type": "live",
+		"title": "hablamos y le damos a Little Nightmares 1",
+		"viewer_count": 78365,
+		"started_at": "2021-03-10T15:04:21Z",
+		"language": "es",
+		"thumbnail_url": "https://static-cdn.jtvnw.net/previews-ttv/live_user_auronplay-{width}x{height}.jpg",
+		"tag_ids": [
+			"d4bb9c58-2141-4881-bcdc-3fe0505457d1"
+		],
+		"is_mature": False
+	}
+	requests_mock.get(
+		"https://api.twitch.tv/helix/streams?user_id=13579",
+		json={
+			"data": [stream_data],
+			"pagination": {}
+		},
+		headers={"date": "2018-11-14T21:30:00Z"}
+	)
+
+	response = client.get("/live-check/13579")
+
+	assert response.status_code == 200
+	assert response.json() == {
+		"is_live": True
+	}
+
+
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_live_check_on_inactive_user(client, requests_mock, mocker):
+	mock_authentication(mocker)
+
+	requests_mock.get(
+		"https://api.twitch.tv/helix/streams?user_id=13579",
+		json={
+			"data": [],
+			"pagination": {}
+		},
+		headers={"date": "2018-11-14T21:30:00Z"}
+	)
+
+	response = client.get("/live-check/13579")
+
+	assert response.status_code == 200
+	assert response.json() == {
+		"is_live": False
+	}
+
+
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		}
+	},
+	CACHE_READONLY=False,
+)
 def test_get_vod_url(client, requests_mock, mocker):
 	mock_authentication(mocker)
 

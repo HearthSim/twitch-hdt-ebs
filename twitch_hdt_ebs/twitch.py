@@ -17,6 +17,7 @@ class TwitchClient:
 	API_EXTENSION_REQUIRED_CONFIGURATION = (
 		API_ROOT + "/extensions/required_configuration"
 	)
+	API_GET_STREAMS = API_ROOT + "/streams"
 	API_GET_VIDEOS = API_ROOT + "/videos"
 	EBS_SEND_MESSAGE = API_ROOT + "/extensions/pubsub"
 
@@ -77,6 +78,16 @@ class TwitchClient:
 		authorization = self.get_ebs_authorization(channel_id)
 
 		return self.put(endpoint, data=data, params=params, authorization=authorization)
+
+	def get_user_stream(self, user_id: str):
+		endpoint = self.API_GET_STREAMS
+		authorization = f"Bearer {get_twitch_app_access_token()}"
+		params = {
+			"user_id": user_id,
+			"first": 1,
+		}
+
+		return self.get(endpoint, params=params, authorization=authorization)
 
 	def get_user_videos(self, user_id: str):
 		endpoint = self.API_GET_VIDEOS
