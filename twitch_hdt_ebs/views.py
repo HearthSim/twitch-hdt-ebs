@@ -309,7 +309,7 @@ class LiveCheckView(BaseTwitchAPIView):
 		)
 
 
-class VodUrlView(BaseTwitchAPIView):
+class CurrentVodView(BaseTwitchAPIView):
 	serializer_class = PubSubMessageSerializer
 
 	def get(self, request, user_id) -> Response:

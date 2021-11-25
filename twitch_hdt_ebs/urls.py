@@ -15,6 +15,9 @@ urlpatterns = [
 	path("setup/", views.ExtensionSetupView.as_view(), name="ebs_setup"),
 	path("send/", views.PubSubSendView.as_view(), name="ebs_pubsub_send"),
 	path("live-check/<int:user_id>", views.LiveCheckView.as_view(), name="ebs_live_check"),
-	path("current_vod/<int:user_id>", views.VodUrlView.as_view(), name="ebs_vod_url"),
+	path("current-vod/<int:user_id>", views.CurrentVodView.as_view(), name="ebs_current_vod"),
 	path("ping/", views.PingView.as_view()),
+
+	# Kept for compatibility, drop after update HDT
+	path("current_vod/<int:user_id>", views.CurrentVodView.as_view(), name="ebs_vod_url"),
 ]

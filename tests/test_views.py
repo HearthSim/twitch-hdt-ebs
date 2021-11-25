@@ -248,7 +248,7 @@ def test_get_vod_url(client, requests_mock, mocker):
 		headers={"date": "2018-11-14T21:30:00Z"}
 	)
 
-	response = client.get("/current_vod/13579")
+	response = client.get("/current-vod/13579")
 
 	assert response.status_code == 200
 	assert response.json() == {
