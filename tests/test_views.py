@@ -254,6 +254,7 @@ def test_get_vod_url(client, requests_mock, mocker):
 	assert response.json() == {
 		"id": "335921245",
 		"url": "https://www.twitch.tv/videos/335921245",
+		"language": "en",
 		"created_at": "2018-11-14T21:30:18Z",
 		"date": "2018-11-14T21:30:00Z"
 	}

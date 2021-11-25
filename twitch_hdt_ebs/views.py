@@ -335,6 +335,7 @@ class CurrentVodView(BaseTwitchAPIView):
 				data = {
 					"id": video["id"],
 					"url": video["url"],
+					"language": video["language"],
 					"created_at": video["created_at"],
 					"date": resp.headers.get("date")
 				}
