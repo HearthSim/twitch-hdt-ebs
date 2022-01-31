@@ -83,6 +83,7 @@ INSTALLED_APPS = [
 	"django.contrib.sites",
 	"allauth.account",
 	"allauth.socialaccount",
+	"django_hearthstone.cards",
 	"oauth2_provider",
 	"rest_framework",
 	"corsheaders",
@@ -122,6 +123,15 @@ CACHES = {
 			"SERIALIZER": "django_redis.serializers.json.JSONSerializer",
 			"SOCKET_CONNECT_TIMEOUT": 3,
 			"SOCKET_TIMEOUT": 3,
+		}
+	},
+	"live_stats": {
+		"BACKEND": "redis_lock.django_cache.RedisCache",
+		"LOCATION": "redis://redis:6379/2",
+		"OPTIONS": {
+			"CLIENT_CLASS": "django_redis.client.DefaultClient",
+			"COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+			"SERIALIZER": "django_redis.serializers.json.JSONSerializer",
 		}
 	}
 }

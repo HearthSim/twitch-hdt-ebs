@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+import string
+from typing import List
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -8,6 +10,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http import HttpResponse
 from django.views.generic import View
+from django_hearthstone.cards.models import Card
 from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
@@ -275,6 +278,71 @@ class SetConfigView(BaseTwitchAPIView):
 		request.user.save()
 
 		return Response(serializer.validated_data)
+
+
+class ActiveChannelsView(APIView):
+	ALPHABET = string.ascii_letters + string.digits
+
+	# def generate_digest_from_deck_list(id_list: List[str]):
+	# 	sorted_cards = sorted(id_list)
+	# 	m = hashlib.md5()
+	# 	m.update(",".join(sorted_cards).encode("utf-8"))
+	# 	return m.hexdigest()
+	#
+	# def get_shortid_from_digest(digest) -> str:
+	# 	return int_to_string(int(digest, 16), ALPHABET)
+
+	def to_deck_url(self, cards_list: List[List[int]]):
+		# cards = []
+		# for [dbf_id, qty] in cards_list:
+		# 	card = Card.objects.get(dbf_id=dbf_id)
+		# 	cards.append(f"{card.card_set}_{dbf_id}")
+
+		# card_list = []
+		# for [dbf_id, count] in cards_list:
+		# 	card = Card.objects.get(dbf_id=dbf_id)
+		# 	card_list.extend([card.card_id for i in range(count)])
+		# digest = self.generate_digest_from_deck_list(card_list)
+		# short_id = self.get_shortid_from_digest(digest)
+
+		return ""
+
+	def get(self, request):
+		cache = caches["live_stats"]
+
+		cache_key = "ActiveChannelsView::get"
+		cached = cache.get(cache_key)
+		if cached:
+			return Response(status=400, data=cached)
+
+		# Need direct client access for keys list
+		client = cache.client.get_client()
+		data = []
+
+		for k in client.keys(":*:twitch_hdt_live_id_*"):
+			details = cache.get(k.decode()[3:])
+
+			if not details or not details.get("deck"):
+				# Skip the obvious garbage
+				continue
+
+			twitch_user_id = details.pop("twitch_user_id")
+			try:
+				social_account = SocialAccount.objects.get(uid=twitch_user_id, provider="twitch")
+			except SocialAccount.DoesNotExist:
+				# Maybe it was deleted since or something
+				continue
+
+			extra_data = social_account.extra_data
+			deck_url = self.to_deck_url(details.get("deck"))
+			data.append({
+				"channel_login": extra_data.get("name") or extra_data.get("login"),
+				"deck_url": deck_url
+			})
+
+		cache.set(cache_key, data, timeout=30)
+
+		return Response(status=200, data=data)
 
 
 class LiveCheckView(BaseTwitchAPIView):

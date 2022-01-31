@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.core.cache import caches
 from django.test import override_settings
 
@@ -121,6 +123,65 @@ def test_game_start(requests_mock, mocker, client):
 	assert stored["rank"] is None
 	assert stored["legend_rank"] == 1337
 	assert stored["deck"] == DECK_LIST_FLAT
+
+
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		},
+		"live_stats": {
+			"BACKEND": "django_redis.cache.RedisCache",
+			"LOCATION": "redis://redis:6379/0",
+			"OPTIONS": {
+				"REDIS_CLIENT_CLASS": "fakeredis.FakeStrictRedis"
+			}
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_get_active_channels(client, requests_mock, mocker):
+	mock_authentication(mocker)
+	cache = caches["live_stats"]
+
+	client = cache.client.get_client()
+	client.set("a", "b")
+	r = client.get("a")
+
+	cache.set("twitch_hdt_live_id_123", {
+		"deck": [],
+		"hero": "foo",
+		"format": 1,
+		"rank": "bar",
+		"legend_rank": 0,
+		"game_type": 1,
+		"twitch_user_id": 123,
+	}, timeout=1200)
+	cache.set("twitch_hdt_live_id_456", {
+		"deck": [],
+		"hero": "foo",
+		"format": "bar",
+		"rank": "bronze",
+		"legend_rank": 0,
+		"game_type": 1,
+		"twitch_user_id": 456,
+	}, timeout=1200)
+
+	response = client.get("/active-channels/")
+
+	assert response.status_code == 200
+	assert response.json() == [
+		{
+			"is_live": True
+		}
+	]
 
 
 @override_settings(
