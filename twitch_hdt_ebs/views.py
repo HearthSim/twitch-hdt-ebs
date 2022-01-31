@@ -322,11 +322,6 @@ class ActiveChannelsView(APIView):
 	def get(self, request):
 		cache = caches["live_stats"]
 
-		cache_key = "ActiveChannelsView::get"
-		cached = cache.get(cache_key)
-		if cached:
-			return Response(status=400, data=cached)
-
 		# Need direct client access for keys list
 		client = cache.client.get_client()
 		data = []
@@ -350,8 +345,6 @@ class ActiveChannelsView(APIView):
 				"channel_login": extra_data.get("name") or extra_data.get("login"),
 				"deck_url": self.to_deck_url(details.get("deck"))
 			})
-
-		cache.set(cache_key, data, timeout=30)
 
 		return Response(status=200, data=data)
 
