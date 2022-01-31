@@ -88,6 +88,7 @@ INSTALLED_APPS = [
 	"rest_framework",
 	"corsheaders",
 	"hearthsim.identity.accounts",
+	"hearthsim.identity.api",
 	"hearthsim.identity.oauth2",
 ]
 

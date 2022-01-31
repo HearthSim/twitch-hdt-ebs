@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import logging
 import string
@@ -23,6 +24,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from sentry_sdk import set_user
+from shortuuid.main import int_to_string
 
 from .exceptions import TwitchAPITimeout
 from .serializers import ConfigSerializer, PubSubMessageSerializer
@@ -283,29 +285,36 @@ class SetConfigView(BaseTwitchAPIView):
 class ActiveChannelsView(APIView):
 	ALPHABET = string.ascii_letters + string.digits
 
-	# def generate_digest_from_deck_list(id_list: List[str]):
-	# 	sorted_cards = sorted(id_list)
-	# 	m = hashlib.md5()
-	# 	m.update(",".join(sorted_cards).encode("utf-8"))
-	# 	return m.hexdigest()
-	#
-	# def get_shortid_from_digest(digest) -> str:
-	# 	return int_to_string(int(digest, 16), ALPHABET)
+	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:
+		sorted_cards = sorted(id_list)
+		m = hashlib.md5()
+		m.update(",".join(sorted_cards).encode("utf-8"))
+		return m.hexdigest()
 
-	def to_deck_url(self, cards_list: List[List[int]]):
-		# cards = []
-		# for [dbf_id, qty] in cards_list:
-		# 	card = Card.objects.get(dbf_id=dbf_id)
-		# 	cards.append(f"{card.card_set}_{dbf_id}")
+	def get_shortid_from_digest(self, digest: str) -> str:
+		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
 
-		# card_list = []
-		# for [dbf_id, count] in cards_list:
-		# 	card = Card.objects.get(dbf_id=dbf_id)
-		# 	card_list.extend([card.card_id for i in range(count)])
-		# digest = self.generate_digest_from_deck_list(card_list)
-		# short_id = self.get_shortid_from_digest(digest)
+	def get_shortid_from_deck_list(self, cards: List[List[int]]) -> str:
+		card_list = []
+		for dbf_id, count, _ in cards:
+			card = Card.objects.get(dbf_id=int(dbf_id))
+			card_list.extend([card.card_id for i in range(count)])
+		digest = self.generate_digest_from_deck_list(card_list)
+		return self.get_shortid_from_digest(digest)
 
-		return ""
+	def to_deck_url(self, deck) -> str:
+		deck_cards_count = []
+		for dbf_id, count, _ in deck.get("cards", []):
+			deck_cards_count.append(f"{dbf_id}_{count}")
+		deck_key = ",".join(sorted(deck_cards_count))
+
+		deck_url = caches["default"].get(deck_key)
+		if not deck_url:
+			short_id = self.get_shortid_from_deck_list(deck.get("cards", []))
+			deck_url = f"https://hsreplay.net/decks/{short_id}/"
+			caches["default"].set(deck_key, deck_url, timeout=1200)
+
+		return deck_url
 
 	def get(self, request):
 		cache = caches["live_stats"]
@@ -334,10 +343,9 @@ class ActiveChannelsView(APIView):
 				continue
 
 			extra_data = social_account.extra_data
-			deck_url = self.to_deck_url(details.get("deck"))
 			data.append({
 				"channel_login": extra_data.get("name") or extra_data.get("login"),
-				"deck_url": deck_url
+				"deck_url": self.to_deck_url(details.get("deck"))
 			})
 
 		cache.set(cache_key, data, timeout=30)

@@ -1,7 +1,8 @@
-from unittest.mock import patch
-
+import pytest
+from allauth.socialaccount.models import SocialAccount
 from django.core.cache import caches
 from django.test import override_settings
+from django_hearthstone.cards.models import Card
 
 from twitch_hdt_ebs.twitch import TwitchClient
 
@@ -125,6 +126,7 @@ def test_game_start(requests_mock, mocker, client):
 	assert stored["deck"] == DECK_LIST_FLAT
 
 
+@pytest.mark.django_db
 @override_settings(
 	EBS_APPLICATIONS={
 		"1a": {
@@ -135,41 +137,169 @@ def test_game_start(requests_mock, mocker, client):
 	},
 	CACHE_READONLY=False,
 )
-def test_get_active_channels(client, requests_mock, mocker):
+def test_get_active_channels(client, mocker, user):
 	mock_authentication(mocker)
-	cache = caches["live_stats"]
+	cache = caches["default"]
+	ls_cache = caches["live_stats"]
 
-	client = cache.client.get_client()
-	client.set("a", "b")
-	r = client.get("a")
+	def create_card(dbf_id, card_id, name):
+		Card.objects.create(
+			card_id=card_id,
+			dbf_id=dbf_id,
+			name=name,
+			description="",
+			flavortext="",
+			how_to_earn="",
+			how_to_earn_golden="",
+			artist="",
+		)
 
-	cache.set("twitch_hdt_live_id_123", {
-		"deck": [],
-		"hero": "foo",
-		"format": 1,
-		"rank": "bar",
+	create_card(58794, "SCH_305", "Secret Passage")
+	create_card(59556, "SCH_350", "Wand Thief")
+	create_card(61159, "DMF_515", "Swindle")
+	create_card(61171, "DMF_519", "Prize Plunderer")
+	create_card(62890, "BAR_319", "Wicked Stab (Rank 1)")
+	create_card(64033, "SW_412", "SI:7 Extortion")
+	create_card(64673, "SW_050", "Maestra of the Masquerade")
+	create_card(65597, "DED_004", "Blackwater Cutlass")
+	create_card(65599, "DED_006", "Mr. Smite")
+	create_card(65645, "DED_510", "Edwin, Defias Kingpin")
+	create_card(66939, "AV_203", "Shadowcrafter Scabbs")
+	create_card(69622, "CORE_EX1_144", "Shadowstep")
+	create_card(69623, "CORE_EX1_145", "Preparation")
+	create_card(69742, "CORE_KAR_069", "Swashburglar")
+	create_card(70202, "AV_710", "Reconnaissance")
+	create_card(70203, "AV_711", "Double Agent")
+	create_card(70395, "AV_298", "Wildpaw Gnoll")
+
+	SocialAccount.objects.create(
+		uid=123,
+		user=user,
+		provider="twitch",
+		extra_data={"login": "foo_bar"}
+	)
+
+	ls_cache.set("twitch_hdt_live_id_123", {
+		"deck": {
+			"hero": 930,
+			"format": 2,
+			"cards": [
+				[69623, 2, 2],
+				[69622, 2, 2],
+				[65597, 2, 2],
+				[61171, 2, 2],
+				[58794, 2, 2],
+				[64033, 2, 2],
+				[69742, 2, 2],
+				[59556, 2, 2],
+				[64673, 1, 1],
+				[70202, 2, 2],
+				[61159, 2, 2],
+				[62890, 2, 2],
+				[70203, 2, 2],
+				[65645, 1, 1],
+				[70395, 2, 2],
+				[65599, 1, 1],
+				[66939, 1, 1]
+			]
+		},
+		"hero": 930,
+		"format": 2,
+		"rank": "foo",
 		"legend_rank": 0,
 		"game_type": 1,
 		"twitch_user_id": 123,
-	}, timeout=1200)
-	cache.set("twitch_hdt_live_id_456", {
-		"deck": [],
-		"hero": "foo",
-		"format": "bar",
-		"rank": "bronze",
+	})
+
+	response = client.get("/active-channels/")
+
+	deck_url = "https://hsreplay.net/decks/T9ZCF12FeCfBPTe14Jsb0d/"
+	assert response.status_code == 200
+	assert response.json() == [
+		{
+			"channel_login": "foo_bar",
+			"deck_url": deck_url
+		}
+	]
+
+	deck_key = "58794_2,59556_2,61159_2,61171_2,62890_2,64033_2,64673_1,65597_2," \
+		"65599_1,65645_1,66939_1,69622_2,69623_2,69742_2,70202_2,70203_2,70395_2"
+	assert cache.get(deck_key) == deck_url
+
+
+@pytest.mark.django_db
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_get_active_channels_with_cached_deck(client, mocker, user):
+	mock_get_shortid_from_deck_list = mocker.patch(
+		"twitch_hdt_ebs.views.ActiveChannelsView.get_shortid_from_deck_list"
+	)
+	mock_authentication(mocker)
+	cache = caches["default"]
+	ls_cache = caches["live_stats"]
+
+	SocialAccount.objects.create(
+		uid=123,
+		user=user,
+		provider="twitch",
+		extra_data={"login": "foo_bar"}
+	)
+
+	ls_cache.set("twitch_hdt_live_id_123", {
+		"deck": {
+			"hero": 930,
+			"format": 2,
+			"cards": [
+				[69623, 2, 2],
+				[69622, 2, 2],
+				[65597, 2, 2],
+				[61171, 2, 2],
+				[58794, 2, 2],
+				[64033, 2, 2],
+				[69742, 2, 2],
+				[59556, 2, 2],
+				[64673, 1, 1],
+				[70202, 2, 2],
+				[61159, 2, 2],
+				[62890, 2, 2],
+				[70203, 2, 2],
+				[65645, 1, 1],
+				[70395, 2, 2],
+				[65599, 1, 1],
+				[66939, 1, 1]
+			]
+		},
+		"hero": 930,
+		"format": 2,
+		"rank": "foo",
 		"legend_rank": 0,
 		"game_type": 1,
-		"twitch_user_id": 456,
-	}, timeout=1200)
+		"twitch_user_id": 123,
+	})
+
+	deck_url = "https://hsreplay.net/decks/T9ZCF12FeCfBPTe14Jsb0d/"
+	deck_key = "58794_2,59556_2,61159_2,61171_2,62890_2,64033_2,64673_1,65597_2," \
+		"65599_1,65645_1,66939_1,69622_2,69623_2,69742_2,70202_2,70203_2,70395_2"
+	cache.set(deck_key, deck_url)
 
 	response = client.get("/active-channels/")
 
 	assert response.status_code == 200
 	assert response.json() == [
 		{
-			"is_live": True
+			"channel_login": "foo_bar",
+			"deck_url": deck_url
 		}
 	]
+	mock_get_shortid_from_deck_list.assert_not_called()
 
 
 @override_settings(
