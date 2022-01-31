@@ -13,7 +13,7 @@ CHAT_BOT_API_SECRET_KEY = "A123B123C123D123E123"
 DATABASES = {
 	"default": {
 		"ENGINE": "django.db.backends.postgresql",
-		"NAME": "test_hdt_ebs",
+		"NAME": "postgres",
 		"USER": "postgres",
 		"PASSWORD": "",
 		"HOST": "localhost",
