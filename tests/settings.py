@@ -1,3 +1,4 @@
+import os
 from twitch_hdt_ebs.settings import *  # noqa
 
 
@@ -11,11 +12,11 @@ STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 DATABASES = {
 	"default": {
 		"ENGINE": "django.db.backends.postgresql",
-		"NAME": "hsreplaynet",
+		"NAME": "test_hdt_ebs",
 		"USER": "postgres",
 		"PASSWORD": "",
 		"HOST": "localhost",
-		"PORT": "",
+		"PORT": os.environ.get("PGPORT", 5432),
 	},
 }
 
