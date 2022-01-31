@@ -133,18 +133,6 @@ def test_game_start(requests_mock, mocker, client):
 			"ebs_client_id": "y",
 		}
 	},
-	CACHES={
-		"default": {
-			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
-		},
-		"live_stats": {
-			"BACKEND": "django_redis.cache.RedisCache",
-			"LOCATION": "redis://redis:6379/0",
-			"OPTIONS": {
-				"REDIS_CLIENT_CLASS": "fakeredis.FakeStrictRedis"
-			}
-		}
-	},
 	CACHE_READONLY=False,
 )
 def test_get_active_channels(client, requests_mock, mocker):
