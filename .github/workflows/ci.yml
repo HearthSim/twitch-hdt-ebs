@@ -38,4 +38,6 @@ jobs:
         PGPORT: ${{ job.services.postgres.ports['5432'] }}
       run: python manage.py migrate --settings tests.settings
     - name: tox (${{matrix.toxenv}})
+      env:
+        PGPORT: ${{ job.services.postgres.ports['5432'] }}
       run: tox
