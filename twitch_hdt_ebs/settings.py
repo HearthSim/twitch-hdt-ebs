@@ -65,6 +65,7 @@ if sentry_sdk:
 	)
 
 SECRET_KEY = params.get("DJANGO_SECRET_KEY", "<local>")
+CHAT_BOT_API_SECRET_KEY = params.get("TWITCH_CHAT_BOT_API_SECRET_KEY", "<local>")
 
 WSGI_APPLICATION = "twitch_hdt_ebs.wsgi.application"
 ROOT_URLCONF = "twitch_hdt_ebs.urls"

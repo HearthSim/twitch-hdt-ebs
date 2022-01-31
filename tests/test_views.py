@@ -3,6 +3,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.core.cache import caches
 from django.test import override_settings
 from django_hearthstone.cards.models import Card
+from tests import settings
 
 from twitch_hdt_ebs.twitch import TwitchClient
 
@@ -211,7 +212,10 @@ def test_get_active_channels(client, mocker, user):
 		"twitch_user_id": 123,
 	})
 
-	response = client.get("/active-channels/")
+	response = client.get(
+		"/active-channels/",
+		HTTP_X_CHAT_BOT_SECRET_KEY=settings.CHAT_BOT_API_SECRET_KEY
+	)
 
 	deck_url = "https://hsreplay.net/decks/T9ZCF12FeCfBPTe14Jsb0d/"
 	assert response.status_code == 200
@@ -290,7 +294,10 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 		"65599_1,65645_1,66939_1,69622_2,69623_2,69742_2,70202_2,70203_2,70395_2"
 	cache.set(deck_key, deck_url)
 
-	response = client.get("/active-channels/")
+	response = client.get(
+		"/active-channels/",
+		HTTP_X_CHAT_BOT_SECRET_KEY=settings.CHAT_BOT_API_SECRET_KEY
+	)
 
 	assert response.status_code == 200
 	assert response.json() == [

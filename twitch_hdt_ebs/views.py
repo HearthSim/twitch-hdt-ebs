@@ -27,6 +27,7 @@ from sentry_sdk import set_user
 from shortuuid.main import int_to_string
 
 from .exceptions import TwitchAPITimeout
+from .permissions import HasApiSecretKey
 from .serializers import ConfigSerializer, PubSubMessageSerializer
 from .twitch import TwitchClient
 
@@ -283,6 +284,8 @@ class SetConfigView(BaseTwitchAPIView):
 
 
 class ActiveChannelsView(APIView):
+	permission_classes = (HasApiSecretKey, )
+
 	ALPHABET = string.ascii_letters + string.digits
 
 	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:

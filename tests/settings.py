@@ -1,4 +1,5 @@
 import os
+
 from twitch_hdt_ebs.settings import *  # noqa
 
 
@@ -7,7 +8,7 @@ DEBUG = True
 
 DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-
+CHAT_BOT_API_SECRET_KEY = "A123B123C123D123E123"
 
 DATABASES = {
 	"default": {
