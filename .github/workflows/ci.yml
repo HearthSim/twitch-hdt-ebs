@@ -41,3 +41,14 @@ jobs:
       env:
         PGPORT: ${{ job.services.postgres.ports['5432'] }}
       run: tox
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [tox]
+    steps:
+      - name: Trigger Deploy
+        env:
+          BUILDTRIGGER_URL: ${{ secrets.BUILDTRIGGER_URL }}
+        run: |
+          curl -k -X POST $BUILDTRIGGER_URL
