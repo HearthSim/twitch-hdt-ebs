@@ -273,6 +273,52 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 	mock_get_shortid_from_deck_list.assert_not_called()
 
 
+@pytest.mark.django_db
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_get_active_channels_for_bgs_game(client, mocker, user):
+	mock_authentication(mocker)
+	cache = caches["default"]
+
+	SocialAccount.objects.create(
+		uid=123,
+		user=user,
+		provider="twitch",
+		extra_data={"login": "foo_bar"}
+	)
+
+	cache.set("twitch_hdt_live_id_123", {
+		"deck": [],
+		"hero": 0,
+		"format": 0,
+		"rank": "foo",
+		"legend_rank": 0,
+		"game_type": 2,
+		"twitch_user_id": 123,
+	})
+
+	response = client.get(
+		"/active-channels/",
+		HTTP_X_CHAT_BOT_SECRET_KEY=settings.CHAT_BOT_API_SECRET_KEY
+	)
+
+	assert response.status_code == 200
+	assert response.json() == [
+		{
+			"channel_login": "foo_bar",
+			"deck_url": None
+		}
+	]
+
+
 @override_settings(
 	EBS_APPLICATIONS={
 		"1a": {

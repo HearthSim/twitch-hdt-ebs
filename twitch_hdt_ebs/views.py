@@ -332,7 +332,7 @@ class ActiveChannelsView(APIView):
 		for k in client.keys(":*:twitch_hdt_live_id_*"):
 			details = cache.get(k.decode()[3:])
 
-			if not details or not details.get("deck"):
+			if not details:
 				# Skip the obvious garbage
 				continue
 
@@ -345,9 +345,12 @@ class ActiveChannelsView(APIView):
 
 			extra_data = social_account.extra_data
 			channel_login = extra_data.get("name") or extra_data.get("login")
+			deck_cards = details.get("deck")
+			deck_url = self.to_deck_url(deck_cards, channel_login) if deck_cards else None
+
 			data.append({
 				"channel_login": channel_login,
-				"deck_url": self.to_deck_url(details.get("deck"), channel_login)
+				"deck_url": deck_url
 			})
 
 		return Response(status=200, data=data)
