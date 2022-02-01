@@ -311,13 +311,12 @@ class ActiveChannelsView(APIView):
 			deck_cards_count.append(f"{dbf_id}_{count}")
 		deck_key = ",".join(sorted(deck_cards_count))
 
-		deck_url = caches["default"].get(deck_key)
-		if not deck_url:
+		short_id = caches["default"].get(deck_key)
+		if not short_id:
 			short_id = self.get_shortid_from_deck_list(deck.get("cards", []))
-			deck_url = f"https://hsreplay.net/decks/{short_id}/"
-			caches["default"].set(deck_key, deck_url, timeout=1200)
+			caches["default"].set(deck_key, short_id, timeout=1200)
 
-		return deck_url
+		return f"https://hsreplay.net/decks/{short_id}/"
 
 	def get(self, request):
 		cache = caches["live_stats"]
