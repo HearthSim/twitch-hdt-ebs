@@ -298,23 +298,20 @@ class ActiveChannelsView(APIView):
 	def get_shortid_from_digest(self, digest: str) -> str:
 		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
 
-	def get_shortid_from_deck_list(self, cards: List[List[int]]) -> str:
+	def get_shortid_from_deck_list(self, cards: List[int]) -> str:
 		card_list = []
-		for dbf_id, count, _ in cards:
-			card = Card.objects.get(dbf_id=int(dbf_id))
-			card_list.extend([card.card_id for i in range(count)])
+		for dbf_id in cards:
+			card = Card.objects.get(dbf_id=dbf_id)
+			card_list.append(card.card_id)
 		digest = self.generate_digest_from_deck_list(card_list)
 		return self.get_shortid_from_digest(digest)
 
-	def to_deck_url(self, deck, channel_login) -> str:
-		deck_cards_count = []
-		for dbf_id, count, _ in deck.get("cards", []):
-			deck_cards_count.append(f"{dbf_id}_{count}")
-		deck_key = ",".join(sorted(deck_cards_count))
+	def to_deck_url(self, card_list: List[int], channel_login) -> str:
+		deck_key = ",".join(sorted([str(dbfid) for dbfid in card_list]))
 
 		short_id = caches["default"].get(deck_key)
 		if not short_id:
-			short_id = self.get_shortid_from_deck_list(deck.get("cards", []))
+			short_id = self.get_shortid_from_deck_list(card_list)
 			caches["default"].set(deck_key, short_id, timeout=1200)
 
 		utm_params = f"utm_source=twitch&utm_medium=chat&utm_content={channel_login}"
