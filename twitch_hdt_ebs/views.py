@@ -288,6 +288,7 @@ class ActiveChannelsView(APIView):
 	permission_classes = (HasApiSecretKey, )
 
 	ALPHABET = string.ascii_letters + string.digits
+	CARDS_MAP_CACHE = {}
 
 	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:
 		sorted_cards = sorted(id_list)
@@ -301,8 +302,12 @@ class ActiveChannelsView(APIView):
 	def get_shortid_from_deck_list(self, cards: List[int]) -> str:
 		card_list = []
 		for dbf_id in cards:
-			card = Card.objects.get(dbf_id=dbf_id)
-			card_list.append(card.card_id)
+			card_id = self.CARDS_MAP_CACHE.get(dbf_id)
+			if not card_id:
+				card = Card.objects.get(dbf_id=dbf_id)
+				card_id = card.card_id
+				self.CARDS_MAP_CACHE[dbf_id] = card.card_id
+			card_list.append(card_id)
 		digest = self.generate_digest_from_deck_list(card_list)
 		return self.get_shortid_from_digest(digest)
 
