@@ -3,7 +3,7 @@ import hashlib
 import json
 import logging
 import string
-from typing import List
+from typing import Dict, List
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -284,11 +284,11 @@ class SetConfigView(BaseTwitchAPIView):
 
 
 class ActiveChannelsView(APIView):
-	authentication_classes = []
+	authentication_classes: List[str] = []
 	permission_classes = (HasApiSecretKey, )
 
 	ALPHABET = string.ascii_letters + string.digits
-	CARDS_MAP_CACHE = {}
+	CARDS_MAP_CACHE: Dict[int, str] = {}
 
 	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:
 		sorted_cards = sorted(id_list)
@@ -300,14 +300,14 @@ class ActiveChannelsView(APIView):
 		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
 
 	def get_shortid_from_deck_list(self, cards: List[int]) -> str:
-		card_list = []
+		card_list: List[str] = []
 		for dbf_id in cards:
 			card_id = self.CARDS_MAP_CACHE.get(dbf_id)
 			if not card_id:
 				card = Card.objects.get(dbf_id=dbf_id)
 				card_id = card.card_id
 				self.CARDS_MAP_CACHE[dbf_id] = card.card_id
-			card_list.append(card_id)
+			card_list.append(str(card_id))
 		digest = self.generate_digest_from_deck_list(card_list)
 		return self.get_shortid_from_digest(digest)
 
