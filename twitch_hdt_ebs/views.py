@@ -284,6 +284,7 @@ class SetConfigView(BaseTwitchAPIView):
 
 
 class ActiveChannelsView(APIView):
+	authentication_classes = []
 	permission_classes = (HasApiSecretKey, )
 
 	ALPHABET = string.ascii_letters + string.digits
