@@ -118,6 +118,7 @@ CACHE_READONLY = bool(int(params.get("REDIS_READONLY", 0)))
 CACHES = {
 	"default": {
 		"BACKEND": "django_redis.cache.RedisCache",
+		# This points to live_stats redis cache
 		"LOCATION": params.get("REDIS_CACHE_URL", "redis://127.0.0.1:6379/1"),
 		"OPTIONS": {
 			"CLIENT_CLASS": "django_redis.client.DefaultClient",
@@ -125,15 +126,6 @@ CACHES = {
 			"SERIALIZER": "django_redis.serializers.json.JSONSerializer",
 			"SOCKET_CONNECT_TIMEOUT": 3,
 			"SOCKET_TIMEOUT": 3,
-		}
-	},
-	"live_stats": {
-		"BACKEND": "redis_lock.django_cache.RedisCache",
-		"LOCATION": "redis://redis:6379/2",
-		"OPTIONS": {
-			"CLIENT_CLASS": "django_redis.client.DefaultClient",
-			"COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-			"SERIALIZER": "django_redis.serializers.json.JSONSerializer",
 		}
 	}
 }

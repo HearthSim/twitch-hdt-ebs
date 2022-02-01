@@ -141,7 +141,6 @@ def test_game_start(requests_mock, mocker, client):
 def test_get_active_channels(client, mocker, user):
 	mock_authentication(mocker)
 	cache = caches["default"]
-	ls_cache = caches["live_stats"]
 
 	def create_card(dbf_id, card_id, name):
 		Card.objects.create(
@@ -180,7 +179,7 @@ def test_get_active_channels(client, mocker, user):
 		extra_data={"login": "foo_bar"}
 	)
 
-	ls_cache.set("twitch_hdt_live_id_123", {
+	cache.set("twitch_hdt_live_id_123", {
 		"deck": {
 			"hero": 930,
 			"format": 2,
@@ -249,7 +248,6 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 	)
 	mock_authentication(mocker)
 	cache = caches["default"]
-	ls_cache = caches["live_stats"]
 
 	SocialAccount.objects.create(
 		uid=123,
@@ -258,7 +256,7 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 		extra_data={"login": "foo_bar"}
 	)
 
-	ls_cache.set("twitch_hdt_live_id_123", {
+	cache.set("twitch_hdt_live_id_123", {
 		"deck": {
 			"hero": 930,
 			"format": 2,

@@ -321,7 +321,7 @@ class ActiveChannelsView(APIView):
 		return f"https://hsreplay.net/decks/{short_id}?{utm_params}"
 
 	def get(self, request):
-		cache = caches["live_stats"]
+		cache = caches["default"]
 
 		# Need direct client access for keys list
 		client = cache.client.get_client()
