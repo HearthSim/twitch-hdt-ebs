@@ -1,6 +1,9 @@
 import base64
+import hashlib
 import json
 import logging
+import string
+from typing import List
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -8,6 +11,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http import HttpResponse
 from django.views.generic import View
+from django_hearthstone.cards.models import Card
 from hearthsim.instrumentation.django_influxdb import write_point
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 from oauth2_provider.models import AccessToken
@@ -20,8 +24,10 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from sentry_sdk import set_user
+from shortuuid.main import int_to_string
 
 from .exceptions import TwitchAPITimeout
+from .permissions import HasApiSecretKey
 from .serializers import ConfigSerializer, PubSubMessageSerializer
 from .twitch import TwitchClient
 
@@ -275,6 +281,73 @@ class SetConfigView(BaseTwitchAPIView):
 		request.user.save()
 
 		return Response(serializer.validated_data)
+
+
+class ActiveChannelsView(APIView):
+	permission_classes = (HasApiSecretKey, )
+
+	ALPHABET = string.ascii_letters + string.digits
+
+	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:
+		sorted_cards = sorted(id_list)
+		m = hashlib.md5()
+		m.update(",".join(sorted_cards).encode("utf-8"))
+		return m.hexdigest()
+
+	def get_shortid_from_digest(self, digest: str) -> str:
+		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
+
+	def get_shortid_from_deck_list(self, cards: List[List[int]]) -> str:
+		card_list = []
+		for dbf_id, count, _ in cards:
+			card = Card.objects.get(dbf_id=int(dbf_id))
+			card_list.extend([card.card_id for i in range(count)])
+		digest = self.generate_digest_from_deck_list(card_list)
+		return self.get_shortid_from_digest(digest)
+
+	def to_deck_url(self, deck, channel_login) -> str:
+		deck_cards_count = []
+		for dbf_id, count, _ in deck.get("cards", []):
+			deck_cards_count.append(f"{dbf_id}_{count}")
+		deck_key = ",".join(sorted(deck_cards_count))
+
+		short_id = caches["default"].get(deck_key)
+		if not short_id:
+			short_id = self.get_shortid_from_deck_list(deck.get("cards", []))
+			caches["default"].set(deck_key, short_id, timeout=1200)
+
+		utm_params = f"utm_source=twitch&utm_medium=chat&utm_content={channel_login}"
+		return f"https://hsreplay.net/decks/{short_id}?{utm_params}"
+
+	def get(self, request):
+		cache = caches["live_stats"]
+
+		# Need direct client access for keys list
+		client = cache.client.get_client()
+		data = []
+
+		for k in client.keys(":*:twitch_hdt_live_id_*"):
+			details = cache.get(k.decode()[3:])
+
+			if not details or not details.get("deck"):
+				# Skip the obvious garbage
+				continue
+
+			twitch_user_id = details.pop("twitch_user_id")
+			try:
+				social_account = SocialAccount.objects.get(uid=twitch_user_id, provider="twitch")
+			except SocialAccount.DoesNotExist:
+				# Maybe it was deleted since or something
+				continue
+
+			extra_data = social_account.extra_data
+			channel_login = extra_data.get("name") or extra_data.get("login")
+			data.append({
+				"channel_login": channel_login,
+				"deck_url": self.to_deck_url(details.get("deck"), channel_login)
+			})
+
+		return Response(status=200, data=data)
 
 
 class LiveCheckView(BaseTwitchAPIView):
