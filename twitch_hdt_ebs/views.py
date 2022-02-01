@@ -305,7 +305,7 @@ class ActiveChannelsView(APIView):
 		digest = self.generate_digest_from_deck_list(card_list)
 		return self.get_shortid_from_digest(digest)
 
-	def to_deck_url(self, deck) -> str:
+	def to_deck_url(self, deck, channel_login) -> str:
 		deck_cards_count = []
 		for dbf_id, count, _ in deck.get("cards", []):
 			deck_cards_count.append(f"{dbf_id}_{count}")
@@ -316,7 +316,8 @@ class ActiveChannelsView(APIView):
 			short_id = self.get_shortid_from_deck_list(deck.get("cards", []))
 			caches["default"].set(deck_key, short_id, timeout=1200)
 
-		return f"https://hsreplay.net/decks/{short_id}/"
+		utm_params = f"utm_source=twitch&utm_medium=chat&utm_content={channel_login}"
+		return f"https://hsreplay.net/decks/{short_id}?{utm_params}"
 
 	def get(self, request):
 		cache = caches["live_stats"]
@@ -340,9 +341,10 @@ class ActiveChannelsView(APIView):
 				continue
 
 			extra_data = social_account.extra_data
+			channel_login = extra_data.get("name") or extra_data.get("login")
 			data.append({
-				"channel_login": extra_data.get("name") or extra_data.get("login"),
-				"deck_url": self.to_deck_url(details.get("deck"))
+				"channel_login": channel_login,
+				"deck_url": self.to_deck_url(details.get("deck"), channel_login)
 			})
 
 		return Response(status=200, data=data)
