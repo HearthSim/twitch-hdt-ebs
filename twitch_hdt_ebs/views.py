@@ -319,7 +319,7 @@ class ActiveChannelsView(APIView):
 			short_id = self.get_shortid_from_deck_list(card_list)
 			caches["default"].set(deck_key, short_id, timeout=1200)
 
-		utm_params = f"utm_source=twitch&utm_medium=chat&utm_content={channel_login}"
+		utm_params = f"utm_source=twitch&utm_medium=chatbot&utm_content={channel_login}"
 		return f"https://hsreplay.net/decks/{short_id}/?{utm_params}"
 
 	def get(self, request):

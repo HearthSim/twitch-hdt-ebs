@@ -199,7 +199,7 @@ def test_get_active_channels(client, mocker, user):
 	)
 
 	short_id = "T9ZCF12FeCfBPTe14Jsb0d"
-	deck_url = f"https://hsreplay.net/decks/{short_id}/?utm_source=twitch&utm_medium=chat&utm_content=foo_bar"
+	deck_url = f"https://hsreplay.net/decks/{short_id}/?utm_source=twitch&utm_medium=chatbot&utm_content=foo_bar"
 	assert response.status_code == 200
 	assert response.json() == [
 		{
@@ -253,7 +253,7 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 	})
 
 	short_id = "T9ZCF12FeCfBPTe14Jsb0d"
-	deck_url = f"https://hsreplay.net/decks/{short_id}/?utm_source=twitch&utm_medium=chat&utm_content=foo_bar"
+	deck_url = f"https://hsreplay.net/decks/{short_id}/?utm_source=twitch&utm_medium=chatbot&utm_content=foo_bar"
 	deck_key = "58794,58794,59556,59556,61159,61159,61171,61171,62890,62890,64033,64033,64673,65597,65597," \
 		"65599,65645,66939,69622,69622,69623,69623,69742,69742,70202,70202,70203,70203,70395,70395"
 	cache.set(deck_key, short_id)
