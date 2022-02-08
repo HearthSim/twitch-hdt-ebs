@@ -154,6 +154,8 @@ class PubSubSendView(BaseTwitchAPIView):
 		data = serializer.validated_data["data"]
 		if serializer.validated_data["type"] == "game_start":
 			self.cache_deck_data(data, serializer.validated_data["version"])
+		else:
+			self.heartbeat_deck_data()
 
 		config = ConfigSerializer(instance=request.user.settings.get("twitch_ebs", {}))
 
@@ -184,7 +186,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			}
 		)
 
-	def cache_deck_data(self, data, version: int, timeout: int = 1200) -> bool:
+	def cache_deck_data(self, data, version: int) -> bool:
 		if version < 3:
 			# Discard old HDT versions
 			return False
@@ -212,9 +214,17 @@ class PubSubSendView(BaseTwitchAPIView):
 			"legend_rank": data.get("legend_rank", 0),
 			"game_type": data.get("game_type", 0),
 			"twitch_user_id": self.request.twitch_user_id,
-		}, timeout=timeout)
+		}, timeout=120)
 
 		return True
+
+	def heartbeat_deck_data(self):
+		if settings.CACHE_READONLY:
+			# Refuse to write in read-only mode
+			return False
+
+		cache_key = f"twitch_hdt_live_id_{self.request.twitch_user_id}"
+		caches["default"].touch(cache_key, timeout=120)
 
 
 class ExtensionSetupView(BaseTwitchAPIView):
