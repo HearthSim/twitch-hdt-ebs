@@ -1,6 +1,7 @@
 import base64
 import datetime
 import json
+from typing import Dict, List
 
 import jwt
 import requests
@@ -18,6 +19,7 @@ class TwitchClient:
 		API_ROOT + "/extensions/required_configuration"
 	)
 	API_GET_STREAMS = API_ROOT + "/streams"
+	API_GET_USERS = API_ROOT + "/users"
 	API_GET_VIDEOS = API_ROOT + "/videos"
 	EBS_SEND_MESSAGE = API_ROOT + "/extensions/pubsub"
 
@@ -88,6 +90,24 @@ class TwitchClient:
 		}
 
 		return self.get(endpoint, params=params, authorization=authorization)
+
+	def get_users(self, ids: List[str]) -> List[Dict]:
+		endpoint = self.API_GET_USERS
+		authorization = f"Bearer {get_twitch_app_access_token()}"
+
+		users: List[Dict] = []
+
+		MAX_USERS_PER_REQUEST = 100
+		for start in range(0, len(ids), MAX_USERS_PER_REQUEST):
+			params = {
+				"id": ids[start:start + MAX_USERS_PER_REQUEST],
+			}
+			response = self.get(endpoint, params=params, authorization=authorization)
+			response.raise_for_status()
+			json = response.json()
+			users = users + json["data"]
+
+		return users
 
 	def get_user_videos(self, user_id: str):
 		endpoint = self.API_GET_VIDEOS

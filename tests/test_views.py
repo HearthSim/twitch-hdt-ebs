@@ -1,5 +1,4 @@
 import pytest
-from allauth.socialaccount.models import SocialAccount
 from django.core.cache import caches
 from django.test import override_settings
 from django_hearthstone.cards.models import Card
@@ -62,6 +61,7 @@ def mock_authentication(mocker):
 			"ebs_client_id": "y",
 		}
 	},
+	HDT_TWITCH_CLIENT_ID="1a",
 	CACHES={
 		"default": {
 			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
@@ -136,9 +136,10 @@ def test_game_start(requests_mock, mocker, client):
 			"ebs_client_id": "y",
 		}
 	},
+	HDT_TWITCH_CLIENT_ID="1a",
 	CACHE_READONLY=False,
 )
-def test_get_active_channels(client, mocker, user):
+def test_get_active_channels(client, mocker, requests_mock):
 	mock_authentication(mocker)
 	cache = caches["default"]
 
@@ -172,11 +173,16 @@ def test_get_active_channels(client, mocker, user):
 	create_card(70203, "AV_711", "Double Agent")
 	create_card(70395, "AV_298", "Wildpaw Gnoll")
 
-	SocialAccount.objects.create(
-		uid=123,
-		user=user,
-		provider="twitch",
-		extra_data={"login": "foo_bar"}
+	mocker.patch("twitch_hdt_ebs.twitch.get_twitch_app_access_token", lambda: "xyz")
+	requests_mock.get(
+		"https://api.twitch.tv/helix/users?id=123",
+		json={
+			"data": [{
+				"id": "123",
+				"login": "foo_bar",
+			}],
+		},
+		headers={"date": "2018-11-14T21:30:00Z"}
 	)
 
 	cache.set("twitch_hdt_live_id_123", {
@@ -222,20 +228,26 @@ def test_get_active_channels(client, mocker, user):
 			"ebs_client_id": "y",
 		}
 	},
+	HDT_TWITCH_CLIENT_ID="1a",
 	CACHE_READONLY=False,
 )
-def test_get_active_channels_with_cached_deck(client, mocker, user):
+def test_get_active_channels_with_cached_deck(client, mocker, requests_mock):
 	mock_get_shortid_from_deck_list = mocker.patch(
 		"twitch_hdt_ebs.views.ActiveChannelsView.get_shortid_from_deck_list"
 	)
 	mock_authentication(mocker)
 	cache = caches["default"]
 
-	SocialAccount.objects.create(
-		uid=123,
-		user=user,
-		provider="twitch",
-		extra_data={"login": "foo_bar"}
+	mocker.patch("twitch_hdt_ebs.twitch.get_twitch_app_access_token", lambda: "xyz")
+	requests_mock.get(
+		"https://api.twitch.tv/helix/users?id=123",
+		json={
+			"data": [{
+				"id": "123",
+				"login": "foo_bar",
+			}],
+		},
+		headers={"date": "2018-11-14T21:30:00Z"}
 	)
 
 	cache.set("twitch_hdt_live_id_123", {
@@ -282,17 +294,23 @@ def test_get_active_channels_with_cached_deck(client, mocker, user):
 			"ebs_client_id": "y",
 		}
 	},
+	HDT_TWITCH_CLIENT_ID="1a",
 	CACHE_READONLY=False,
 )
-def test_get_active_channels_for_bgs_game(client, mocker, user):
+def test_get_active_channels_for_bgs_game(client, mocker, requests_mock):
 	mock_authentication(mocker)
 	cache = caches["default"]
 
-	SocialAccount.objects.create(
-		uid=123,
-		user=user,
-		provider="twitch",
-		extra_data={"login": "foo_bar"}
+	mocker.patch("twitch_hdt_ebs.twitch.get_twitch_app_access_token", lambda: "xyz")
+	requests_mock.get(
+		"https://api.twitch.tv/helix/users?id=123",
+		json={
+			"data": [{
+				"id": "123",
+				"login": "foo_bar",
+			}],
+		},
+		headers={"date": "2018-11-14T21:30:00Z"}
 	)
 
 	cache.set("twitch_hdt_live_id_123", {
@@ -380,6 +398,7 @@ def test_live_check_on_active_user(client, requests_mock, mocker):
 			"ebs_client_id": "y",
 		}
 	},
+	HDT_TWITCH_CLIENT_ID="1a",
 	CACHES={
 		"default": {
 			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"

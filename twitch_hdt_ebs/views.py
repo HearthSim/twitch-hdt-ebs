@@ -322,8 +322,17 @@ class ActiveChannelsView(APIView):
 		utm_params = f"utm_source=twitch&utm_medium=chatbot&utm_content={channel_login}"
 		return f"https://hsreplay.net/decks/{short_id}/?{utm_params}"
 
+	def get_twitch_client(self) -> TwitchClient:
+		client_id = settings.HDT_TWITCH_CLIENT_ID
+		config = settings.EBS_APPLICATIONS[client_id]
+		return TwitchClient(
+			client_id, config["secret"], config["owner_id"],
+			jwt_ttl=settings.EBS_JWT_TTL_SECONDS
+		)
+
 	def get(self, request):
 		cache = caches["default"]
+		twitch_client = self.get_twitch_client()
 
 		# Need direct client access for keys list
 		client = cache.client.get_client()
@@ -340,27 +349,25 @@ class ActiveChannelsView(APIView):
 		for details in all_details:
 			twitch_user_ids.append(details["twitch_user_id"])
 
-		# Fetch all social accounts from the DB
-		social_accounts = list(SocialAccount.objects.filter(
-			uid__in=twitch_user_ids,
-			provider="twitch"
-		))
+		# Fetch all the channel names from Twitch API
+		users = twitch_client.get_users(ids=twitch_user_ids)
+
+		# Pivot the user list
+		users_by_id = {
+			str(user["id"]): user for user in users
+			if "id" in user
+		}
 
 		for details in all_details:
 			twitch_user_id = details["twitch_user_id"]
 
-			social_account = None
-			for _account in social_accounts:
-				if str(_account.uid) == str(twitch_user_id):
-					social_account = _account
-					break
+			twitch_account = users_by_id.get(str(twitch_user_id))
 
-			if not social_account:
+			if not twitch_account or not twitch_account.get("login"):
 				# Maybe it was deleted since or something
 				continue
 
-			extra_data = social_account.extra_data
-			channel_login = extra_data.get("name") or extra_data.get("login")
+			channel_login = twitch_account["login"]
 			deck_cards = details.get("deck")
 			deck_url = self.to_deck_url(deck_cards, channel_login) if deck_cards else None
 
