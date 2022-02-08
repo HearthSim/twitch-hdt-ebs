@@ -329,17 +329,33 @@ class ActiveChannelsView(APIView):
 		client = cache.client.get_client()
 		data = []
 
+		all_details = []
 		for k in client.keys(":*:twitch_hdt_live_id_*"):
 			details = cache.get(k.decode()[3:])
 
-			if not details:
-				# Skip the obvious garbage
-				continue
+			if details and "twitch_user_id" in details:
+				all_details.append(details)
 
-			twitch_user_id = details.pop("twitch_user_id")
-			try:
-				social_account = SocialAccount.objects.get(uid=twitch_user_id, provider="twitch")
-			except SocialAccount.DoesNotExist:
+		twitch_user_ids = []
+		for details in all_details:
+			twitch_user_ids.append(details["twitch_user_id"])
+
+		# Fetch all social accounts from the DB
+		social_accounts = list(SocialAccount.objects.filter(
+			uid__in=twitch_user_ids,
+			provider="twitch"
+		))
+
+		for details in all_details:
+			twitch_user_id = details["twitch_user_id"]
+
+			social_account = None
+			for _account in social_accounts:
+				if str(_account.uid) == str(twitch_user_id):
+					social_account = _account
+					break
+
+			if not social_account:
 				# Maybe it was deleted since or something
 				continue
 
