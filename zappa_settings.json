@@ -6,6 +6,9 @@
 		"runtime": "python3.6",
 		"memory_size": 128,
 		"num_retained_versions": 3,
+		"tags": {
+			"expense-class": "hsreplaynet"
+		},
 		"timeout_seconds": 45,
 		"touch": false,
 		"aws_region": "us-east-1",
