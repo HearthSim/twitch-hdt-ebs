@@ -62,6 +62,7 @@ if sentry_sdk:
 			RedisIntegration(),
 		],
 		auto_enabling_integrations=False,
+		in_app_include=["twitch_hdt_ebs", "hearthsim-identity"],
 	)
 
 SECRET_KEY = params.get("DJANGO_SECRET_KEY", "<local>")
