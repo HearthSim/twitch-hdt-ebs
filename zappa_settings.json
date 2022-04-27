@@ -3,7 +3,7 @@
 		"profile_name": null,
 		"project_name": "twitch-hdt-ebs",
 		"lambda_description": "https://github.com/HearthSim/twitch-hdt-ebs",
-		"runtime": "python3.6",
+		"runtime": "python3.9",
 		"memory_size": 128,
 		"num_retained_versions": 3,
 		"tags": {
