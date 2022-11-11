@@ -3,7 +3,7 @@ import hashlib
 import json
 import logging
 import string
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -117,10 +117,10 @@ class CanPublishToTwitchChannel(BasePermission):
 
 
 class BaseTwitchAPIView(APIView):
-	authentication_classes = (OAuth2Authentication, )
-	permission_classes = (
+	authentication_classes = [OAuth2Authentication]
+	permission_classes = [
 		IsAuthenticated, CanPublishToTwitchChannel, HasValidTwitchClientId,
-	)
+	]
 
 	def get_twitch_client(self) -> TwitchClient:
 		config = settings.EBS_APPLICATIONS[self.request.twitch_client_id]
@@ -228,7 +228,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 
 class ExtensionSetupView(BaseTwitchAPIView):
-	authentication_classes = (TwitchJWTAuthentication, )
+	authentication_classes = [TwitchJWTAuthentication]
 
 	def post(self, request, format=None) -> Response:
 		twitch_client = self.get_twitch_client()
@@ -272,7 +272,7 @@ class ExtensionSetupView(BaseTwitchAPIView):
 
 
 class SetConfigView(BaseTwitchAPIView):
-	authentication_classes = (TwitchJWTAuthentication, )
+	authentication_classes = [TwitchJWTAuthentication]
 	serializer_class = ConfigSerializer
 	settings_key = "twitch_ebs"
 
@@ -294,8 +294,8 @@ class SetConfigView(BaseTwitchAPIView):
 
 
 class ActiveChannelsView(APIView):
-	authentication_classes: List[str] = []
-	permission_classes = (HasApiSecretKey, )
+	authentication_classes: List[Any] = []
+	permission_classes = [HasApiSecretKey]
 
 	ALPHABET = string.ascii_letters + string.digits
 	CARDS_MAP_CACHE: Dict[int, str] = {}
