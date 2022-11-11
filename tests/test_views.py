@@ -7,10 +7,88 @@ from tests import settings
 from twitch_hdt_ebs.twitch import TwitchClient
 
 
-def test_config_view(client):
-	response = client.post("/config/")
+class TestConfigView:
+	def test_unauthenticated_post(self, api_client):
+		response = api_client.post("/config/")
+		assert response.status_code == 403
 
-	assert response.status_code == 403
+	def test_get(self, api_client, user, mocker):
+		api_client.force_authenticate(user)
+		mock_authentication(mocker)
+
+		user.settings["twitch_ebs"] = {
+			"deck_position": "topright",
+			"game_offset_horizontal": "",
+		}
+		user.save()
+
+		response = api_client.get("/config/")
+
+		assert response.status_code == 200
+		assert response.json() == {
+			"deck_position": "topright",
+			"game_offset_horizontal": "0.0",
+			"hidden": "0",
+			"when_to_show_bobs_buddy": "all",
+			"promote_on_hsreplaynet": True,
+		}
+
+	def test_put(self, api_client, user, mocker):
+		api_client.force_authenticate(user)
+		mock_authentication(mocker)
+
+		user.settings["twitch_ebs"] = {}
+		user.save()
+
+		response = api_client.put(
+			"/config/",
+			data={
+				"deck_position": "topright",
+				"game_offset_horizontal": "-25.5",
+			}
+		)
+
+		expected = {
+			"deck_position": "topright",
+			"game_offset_horizontal": "-25.5",
+			"hidden": "0",
+			"when_to_show_bobs_buddy": "all",
+			"promote_on_hsreplaynet": True,
+		}
+
+		assert response.status_code == 200
+		assert response.json() == expected
+
+		user.refresh_from_db()
+		assert user.settings["twitch_ebs"] == expected
+
+	def test_put_invalid(self, api_client, user, mocker):
+		api_client.force_authenticate(user)
+		mock_authentication(mocker)
+
+		user.settings["twitch_ebs"] = {}
+		user.save()
+
+		response = api_client.put(
+			"/config/",
+			data={
+				"game_offset_horizontal": "",
+			}
+		)
+
+		expected = {
+			"deck_position": "topleft",
+			"game_offset_horizontal": "0.0",
+			"hidden": "0",
+			"when_to_show_bobs_buddy": "all",
+			"promote_on_hsreplaynet": True,
+		}
+
+		assert response.status_code == 200
+		assert response.json() == expected
+
+		user.refresh_from_db()
+		assert user.settings["twitch_ebs"] == expected
 
 
 def test_setup_view(client):

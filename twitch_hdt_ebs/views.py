@@ -9,6 +9,7 @@ import jwt
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.core.cache import caches
+from django.db import transaction
 from django.http import HttpResponse
 from django.views.generic import View
 from django_hearthstone.cards.models import Card
@@ -283,13 +284,14 @@ class SetConfigView(BaseTwitchAPIView):
 
 	def put(self, request, format=None):
 		serializer = self.serializer_class(data=request.data)
-		if not serializer.is_valid():
-			raise ValidationError(serializer.errors)
+		serializer.is_valid(raise_exception=True)
 
-		request.user.settings[self.settings_key] = serializer.validated_data
-		request.user.save()
+		with transaction.atomic():
+			request.user.refresh_from_db()
+			request.user.settings[self.settings_key] = serializer.validated_data
+			request.user.save()
 
-		return Response(serializer.validated_data)
+		return self.get(request)
 
 
 class ActiveChannelsView(APIView):
