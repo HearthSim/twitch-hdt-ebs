@@ -172,8 +172,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		write_point(
 			"pubsub_message",
-			{"count": 1},
-			channel_id=self.request.twitch_user_id,
+			{"count": 1, "channel_id": self.request.twitch_user_id},
 			status_code=resp.status_code,
 			message_type=serializer.validated_data["type"]
 		)
@@ -403,8 +402,7 @@ class LiveCheckView(BaseTwitchAPIView):
 
 		write_point(
 			"live_check_request",
-			{"count": 1},
-			user_id=user_id,
+			{"count": 1, "user_id": user_id},
 			status_code=resp.status_code
 		)
 
@@ -435,8 +433,7 @@ class CurrentVodView(BaseTwitchAPIView):
 
 		write_point(
 			"get_videos_request",
-			{"count": 1},
-			user_id=user_id,
+			{"count": 1, "user_id": user_id},
 			status_code=resp.status_code
 		)
 
