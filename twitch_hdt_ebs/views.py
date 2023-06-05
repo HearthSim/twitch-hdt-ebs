@@ -111,7 +111,6 @@ class CanPublishToTwitchChannel(BasePermission):
 				"detail": user_id,
 				"available_channels": request.available_channels,
 			})
-			return False
 
 		request.twitch_user_id = user_id
 		return True
