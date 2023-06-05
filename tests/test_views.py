@@ -2,9 +2,104 @@ import pytest
 from django.core.cache import caches
 from django.test import override_settings
 from django_hearthstone.cards.models import Card
-from tests import settings
+from shortuuid.main import int_to_string
 
+from tests import settings
 from twitch_hdt_ebs.twitch import TwitchClient
+from twitch_hdt_ebs.views import ActiveChannelsView
+
+
+def create_card(dbf_id, card_id, name):
+	Card.objects.create(
+		card_id=card_id,
+		dbf_id=dbf_id,
+		name=name,
+		description="",
+		flavortext="",
+		how_to_earn="",
+		how_to_earn_golden="",
+		artist="",
+	)
+
+
+class TestActiveChannelView:
+
+	def test_generate_digest_from_deck_list(self):
+		view = ActiveChannelsView()
+
+		assert view.generate_digest_from_deck_list(["CS2_005", "CS2_012"]) == \
+			"b17757abcc45e8c5d6b12650725263a6"
+
+	def test_generate_digest_from_deck_list_with_sideboard(self):
+		view = ActiveChannelsView()
+
+		assert view.generate_digest_from_deck_list(
+			["CS2_005", "CS2_012"],
+			sideboard={"ETC_080": ["OG_042", "OG_133", "BOT_424"]}
+		) == "897160eabea1d92662e629942f65cfa0"
+
+	@pytest.mark.django_db
+	def test_get_shortid_from_deck_list(self):
+		create_card(1050, "CS2_005", "Claw")
+		create_card(64, "CS2_012", "Swipe")
+
+		view = ActiveChannelsView()
+
+		assert view.get_shortid_from_deck_list([1050, 64]) == int_to_string(
+			int("b17757abcc45e8c5d6b12650725263a6", 16),
+			ActiveChannelsView.ALPHABET
+		)
+
+	@pytest.mark.django_db
+	def test_get_shortid_from_deck_list_with_sideboard(self):
+		create_card(1050, "CS2_005", "Claw")
+		create_card(64, "CS2_012", "Swipe")
+		create_card(90749, "ETC_080", "E.T.C., Band Manager")
+		create_card(38312, "OG_042", "Y'Shaarj, Rage Unbound")
+		create_card(38496, "OG_133", "N'Zoth, the Corruptor")
+		create_card(48625, "BOT_424", "Mecha'thun")
+
+		view = ActiveChannelsView()
+
+		assert view.get_shortid_from_deck_list(
+			[1050, 64],
+			sideboard={90749: [38312, 38496, 48625]}
+		) == int_to_string(
+			int("897160eabea1d92662e629942f65cfa0", 16),
+			ActiveChannelsView.ALPHABET
+		)
+
+	@pytest.mark.django_db
+	def test_to_deck_url(self):
+		create_card(1050, "CS2_005", "Claw")
+		create_card(64, "CS2_012", "Swipe")
+
+		view = ActiveChannelsView()
+
+		assert view.to_deck_url([1050, 64], "test-channel-login") == (
+			"https://hsreplay.net/decks/WzWNuLVn9DWW7D6bZpl2yf/?utm_source=twitch&"
+			"utm_medium=chatbot&utm_content=test-channel-login"
+		)
+
+	@pytest.mark.django_db
+	def test_to_deck_url_with_sideboard(self):
+		create_card(1050, "CS2_005", "Claw")
+		create_card(64, "CS2_012", "Swipe")
+		create_card(90749, "ETC_080", "E.T.C., Band Manager")
+		create_card(38312, "OG_042", "Y'Shaarj, Rage Unbound")
+		create_card(38496, "OG_133", "N'Zoth, the Corruptor")
+		create_card(48625, "BOT_424", "Mecha'thun")
+
+		view = ActiveChannelsView()
+
+		assert view.to_deck_url(
+			[1050, 64],
+			"test-channel-login",
+			sideboard={90749: [38312, 38496, 48625]}
+		) == (
+			"https://hsreplay.net/decks/8cUM263xrSr1uiLrXsVvle/?utm_source=twitch&"
+			"utm_medium=chatbot&utm_content=test-channel-login"
+		)
 
 
 class TestConfigView:
@@ -220,18 +315,6 @@ def test_game_start(requests_mock, mocker, client):
 def test_get_active_channels(client, mocker, requests_mock):
 	mock_authentication(mocker)
 	cache = caches["default"]
-
-	def create_card(dbf_id, card_id, name):
-		Card.objects.create(
-			card_id=card_id,
-			dbf_id=dbf_id,
-			name=name,
-			description="",
-			flavortext="",
-			how_to_earn="",
-			how_to_earn_golden="",
-			artist="",
-		)
 
 	create_card(58794, "SCH_305", "Secret Passage")
 	create_card(59556, "SCH_350", "Wand Thief")

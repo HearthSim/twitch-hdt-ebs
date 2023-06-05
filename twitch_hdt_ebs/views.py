@@ -3,7 +3,7 @@ import hashlib
 import json
 import logging
 import string
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -299,33 +299,87 @@ class ActiveChannelsView(APIView):
 	ALPHABET = string.ascii_letters + string.digits
 	CARDS_MAP_CACHE: Dict[int, str] = {}
 
-	def generate_digest_from_deck_list(self, id_list: List[str]) -> str:
+	def generate_digest_from_deck_list(
+		self,
+		id_list: List[str],
+		sideboard: Optional[Dict[str, List[str]]] = None
+	) -> str:
 		sorted_cards = sorted(id_list)
 		m = hashlib.md5()
 		m.update(",".join(sorted_cards).encode("utf-8"))
+
+		if sideboard:
+			for linked_card_id, sideboard_card_ids in sorted(sideboard.items()):
+				if not sideboard_card_ids:
+					# ignore empty sideboards
+					continue
+
+				sorted_sideboard_card_ids = sorted(sideboard_card_ids)
+				update_str = "/%s:%s" % (
+					linked_card_id, ",".join(sorted_sideboard_card_ids)
+				)
+				m.update(update_str.encode("utf-8"))
+
 		return m.hexdigest()
 
 	def get_shortid_from_digest(self, digest: str) -> str:
 		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
 
-	def get_shortid_from_deck_list(self, cards: List[int]) -> str:
+	def _dbf_id_to_card_id(self, dbf_id) -> str:
+		card_id = self.CARDS_MAP_CACHE.get(dbf_id)
+		if not card_id:
+			card = Card.objects.get(dbf_id=dbf_id)
+			card_id = card.card_id
+			self.CARDS_MAP_CACHE[dbf_id] = card.card_id
+		return card_id
+
+	def get_shortid_from_deck_list(
+		self,
+		cards: List[int],
+		sideboard: Optional[Dict[int, List[int]]] = None
+	) -> str:
 		card_list: List[str] = []
+		sideboard_card_map: Optional[Dict[str, List[str]]] = None
 		for dbf_id in cards:
-			card_id = self.CARDS_MAP_CACHE.get(dbf_id)
-			if not card_id:
-				card = Card.objects.get(dbf_id=dbf_id)
-				card_id = card.card_id
-				self.CARDS_MAP_CACHE[dbf_id] = card.card_id
-			card_list.append(str(card_id))
-		digest = self.generate_digest_from_deck_list(card_list)
+			card_list.append(str(self._dbf_id_to_card_id(dbf_id)))
+
+		if sideboard:
+			sideboard_card_map = {}
+			for linked_card_dbf_id, sideboard_dbf_ids in sideboard.items():
+				linked_card_id = self._dbf_id_to_card_id(linked_card_dbf_id)
+				sideboard_card_map[linked_card_id] = [
+					self._dbf_id_to_card_id(dbf_id) for dbf_id in sideboard_dbf_ids
+				]
+
+		digest = self.generate_digest_from_deck_list(card_list, sideboard=sideboard_card_map)
 		return self.get_shortid_from_digest(digest)
 
-	def to_deck_url(self, card_list: List[int], channel_login) -> str:
+	def to_deck_url(
+		self,
+		card_list: List[int],
+		channel_login,
+		sideboard: Optional[Dict[int, List[int]]] = None
+	) -> str:
 		deck_key = ",".join(sorted([str(dbfid) for dbfid in card_list]))
+
+		if sideboard:
+			for linked_card_dbf_id, sideboard_dbf_ids in sorted(sideboard.items()):
+				if not sideboard_dbf_ids:
+					# ignore empty sideboards
+					continue
+
+				sorted_sideboard_dbf_ids = [
+					str(dbf_id) for dbf_id in sorted(sideboard_dbf_ids)
+				]
+
+				update_str = "/%s:%s" % (
+					linked_card_dbf_id, ",".join(sorted_sideboard_dbf_ids)
+				)
+				deck_key += update_str
 
 		short_id = caches["default"].get(deck_key)
 		if not short_id:
-			short_id = self.get_shortid_from_deck_list(card_list)
+			short_id = self.get_shortid_from_deck_list(card_list, sideboard=sideboard)
 			caches["default"].set(deck_key, short_id, timeout=1200)
 
 		utm_params = f"utm_source=twitch&utm_medium=chatbot&utm_content={channel_login}"
@@ -378,7 +432,12 @@ class ActiveChannelsView(APIView):
 
 			channel_login = twitch_account["login"]
 			deck_cards = details.get("deck")
-			deck_url = self.to_deck_url(deck_cards, channel_login) if deck_cards else None
+			deck_sideboards = details.get("sideboards")
+			deck_url = self.to_deck_url(
+				deck_cards,
+				channel_login,
+				sideboard=deck_sideboards
+			) if deck_cards else None
 
 			data.append({
 				"channel_login": channel_login,
