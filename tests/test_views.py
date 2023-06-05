@@ -3,8 +3,8 @@ from django.core.cache import caches
 from django.test import override_settings
 from django_hearthstone.cards.models import Card
 from shortuuid.main import int_to_string
-
 from tests import settings
+
 from twitch_hdt_ebs.twitch import TwitchClient
 from twitch_hdt_ebs.views import ActiveChannelsView
 

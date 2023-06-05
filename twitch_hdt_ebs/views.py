@@ -331,6 +331,8 @@ class ActiveChannelsView(APIView):
 			card = Card.objects.get(dbf_id=dbf_id)
 			card_id = card.card_id
 			self.CARDS_MAP_CACHE[dbf_id] = card.card_id
+
+		assert card_id  # make mypy happy
 		return card_id
 
 	def get_shortid_from_deck_list(
