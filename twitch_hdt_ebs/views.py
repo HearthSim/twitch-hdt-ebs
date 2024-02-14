@@ -155,7 +155,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		data = serializer.validated_data["data"]
 		if serializer.validated_data["type"] == "game_start":
-			self.cache_deck_data(data, serializer.validated_data["version"], config)
+			self.cache_deck_data(data, serializer.validated_data["version"], config.data)
 		else:
 			self.heartbeat_deck_data()
 
