@@ -371,7 +371,8 @@ def test_get_active_channels(client, mocker, requests_mock):
 	assert response.json() == [
 		{
 			"channel_login": "foo_bar",
-			"deck_url": deck_url
+			"deck_url": deck_url,
+			"affiliate_utm": None,
 		}
 	]
 
@@ -440,7 +441,8 @@ def test_get_active_channels_with_cached_deck(client, mocker, requests_mock):
 	assert response.json() == [
 		{
 			"channel_login": "foo_bar",
-			"deck_url": deck_url
+			"deck_url": deck_url,
+			"affiliate_utm": None,
 		}
 	]
 	mock_get_shortid_from_deck_list.assert_not_called()
@@ -493,7 +495,8 @@ def test_get_active_channels_for_bgs_game(client, mocker, requests_mock):
 	assert response.json() == [
 		{
 			"channel_login": "foo_bar",
-			"deck_url": None
+			"deck_url": None,
+			"affiliate_utm": None,
 		}
 	]
 
