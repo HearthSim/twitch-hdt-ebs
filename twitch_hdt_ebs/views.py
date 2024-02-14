@@ -151,13 +151,13 @@ class PubSubSendView(BaseTwitchAPIView):
 		serializer = self.serializer_class(data=request.data)
 		serializer.is_valid(raise_exception=True)
 
+		config = ConfigSerializer(instance=request.user.settings.get("twitch_ebs", {}))
+
 		data = serializer.validated_data["data"]
 		if serializer.validated_data["type"] == "game_start":
-			self.cache_deck_data(data, serializer.validated_data["version"])
+			self.cache_deck_data(data, serializer.validated_data["version"], config.data)
 		else:
 			self.heartbeat_deck_data()
-
-		config = ConfigSerializer(instance=request.user.settings.get("twitch_ebs", {}))
 
 		pubsub_data = {
 			"type": serializer.validated_data["type"],
@@ -185,7 +185,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			}
 		)
 
-	def cache_deck_data(self, data, version: int) -> bool:
+	def cache_deck_data(self, data, version: int, config: dict) -> bool:
 		if version < 3:
 			# Discard old HDT versions
 			return False
@@ -213,6 +213,7 @@ class PubSubSendView(BaseTwitchAPIView):
 			"legend_rank": data.get("legend_rank", 0),
 			"game_type": data.get("game_type", 0),
 			"twitch_user_id": self.request.twitch_user_id,
+			"affiliate_utm": config.get("affiliate_utm"),
 		}, timeout=120)
 
 		return True
@@ -443,7 +444,8 @@ class ActiveChannelsView(APIView):
 
 			data.append({
 				"channel_login": channel_login,
-				"deck_url": deck_url
+				"deck_url": deck_url,
+				"affiliate_utm": details.get("affiliate_utm")
 			})
 
 		return Response(status=200, data=data)
