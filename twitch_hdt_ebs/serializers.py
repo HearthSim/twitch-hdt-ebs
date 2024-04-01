@@ -42,7 +42,7 @@ class ConfigSerializer(serializers.Serializer):
 		max_value=50,
 	)
 	promote_on_hsreplaynet = serializers.BooleanField(default=True)
-	affiliate_utm = serializers.CharField(required=False)
+	affiliate_utm = serializers.CharField(required=False, write_only=True)
 
 	def validate_hidden(self, value):
 		if value == "":
