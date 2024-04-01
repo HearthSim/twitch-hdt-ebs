@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import string
+from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
 import jwt
@@ -199,15 +200,24 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		cards_list = []
 
-		for dbf_id, current, initial in deck_data.get("cards", []):
+		for dbf_id, _, initial in deck_data.get("cards", []):
 			for i in range(initial):
 				cards_list.append(dbf_id)
 
 		cards_list.sort()
 
+		sideboards = defaultdict(list)
+
+		for owner_dbf_id, dbf_id, _, initial in deck_data.get("sideboards", []):
+			for i in range(initial):
+				sideboards[owner_dbf_id].append(dbf_id)
+
+		sideboards = {o: sorted(c) for o, c in sideboards.items()}
+
 		cache_key = f"twitch_hdt_live_id_{self.request.twitch_user_id}"
 		caches["default"].set(cache_key, {
 			"deck": cards_list,
+			"sideboards": sideboards,
 			"hero": deck_data.get("hero"),
 			"format": deck_data.get("format"),
 			"rank": data.get("rank"),
