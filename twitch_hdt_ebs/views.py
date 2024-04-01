@@ -1,4 +1,5 @@
 import base64
+import functools
 import hashlib
 import json
 import logging
@@ -298,33 +299,86 @@ class ActiveChannelsView(APIView):
 	permission_classes = [HasApiSecretKey]
 
 	ALPHABET = string.ascii_letters + string.digits
+	CHARACTER_ORDERING = "_0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
 	CARDS_MAP_CACHE: Dict[int, str] = {}
+
+	def _utf8_chr_cmp(self, x, y):
+		return self.CHARACTER_ORDERING.index(x) - self.CHARACTER_ORDERING.index(y)
+
+	def _utf8_str_cmp(self, x, y):
+		"""
+		This function implements an extremely loose interpretation of the Unicode collation
+		algorithm, as used for comparing strings. As the character subset we care about for card
+		ids is a tiny subset of Unicode, we intentionally do not care about accents, multibyte
+		characters and more, but only about the english alphabet, digits and the underscore
+		character.
+
+		Refer to https://www.unicode.org/reports/tr10/tr10-41.html#Multi_Level_Comparison.
+		"""
+		if x == y:  # identical string
+			return 0
+
+		if isinstance(x, (tuple, list)) or isinstance(y, (tuple, list)):
+			assert type(x) == type(y)
+
+			# Recurse, but only for the first key, and make sure it's not a collection
+			assert not isinstance(x[0], (tuple, list))
+			assert not isinstance(y[0], (tuple, list))
+
+			sorted = self._utf8_str_cmp(x[0], y[0])
+			assert sorted != 0, "Refusing to sort past the first key"
+
+			return sorted
+
+		# Start Multi-Level Comparison as defined by Unicode Collation:
+		# L1: Compare the base characters (case-insensitive)
+		for a, b in zip(x.lower(), y.lower()):
+			val = self._utf8_chr_cmp(a, b)
+			if val:
+				return val
+		# L2: we don't care about accents, so skip
+		# L3: compare by case (we don't care about variants)
+		for a, b in zip(x, y):
+			val = self._utf8_chr_cmp(a, b)
+			if val:
+				return val
+		# L4: we don't care about punctuation, so skip
+		# L5: we don't have identical characters with different code points, so skip
+		# End of Multi-Level Comparison
+		if len(x) < len(y):  # if all characters are equal so far, compare by length
+			return -1
+		else:
+			return 1
 
 	def generate_digest_from_deck_list(
 		self,
 		id_list: List[str],
 		sideboard: Optional[Dict[str, List[str]]] = None
 	) -> str:
-		sorted_cards = sorted(id_list)
+		# The custom sort key is necessary to ensure that lowercase card ids are sorted in
+		# alphabetic order rather than codepoint order, so that the output matches the output
+		# from the corresponding implementations of digest generation in PL/SQL and Redshift.
+
+		utf8_str_key = functools.cmp_to_key(self._utf8_str_cmp)
+		sorted_cards = sorted(id_list, key=utf8_str_key)
 		m = hashlib.md5()
 		m.update(",".join(sorted_cards).encode("utf-8"))
 
 		if sideboard:
-			for linked_card_id, sideboard_card_ids in sorted(sideboard.items()):
+			sorted_sideboard_items = sorted(sideboard.items(), key=lambda c: utf8_str_key(c[0]))
+			for linked_card_id, sideboard_card_ids in sorted_sideboard_items:
 				if not sideboard_card_ids:
 					# ignore empty sideboards
 					continue
 
-				sorted_sideboard_card_ids = sorted(sideboard_card_ids)
-				update_str = "/%s:%s" % (
-					linked_card_id, ",".join(sorted_sideboard_card_ids)
-				)
+				sorted_sideboard_card_ids = sorted(sideboard_card_ids, key=utf8_str_key)
+				update_str = "/%s:%s" % (linked_card_id, ",".join(sorted_sideboard_card_ids))
 				m.update(update_str.encode("utf-8"))
 
 		return m.hexdigest()
 
 	def get_shortid_from_digest(self, digest: str) -> str:
-		return int_to_string(int(digest, 16), ActiveChannelsView.ALPHABET)
+		return int_to_string(int(digest, 16), self.ALPHABET)
 
 	def _dbf_id_to_card_id(self, dbf_id) -> str:
 		card_id = self.CARDS_MAP_CACHE.get(dbf_id)
