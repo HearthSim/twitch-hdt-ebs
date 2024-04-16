@@ -8,6 +8,22 @@ class PubSubMessageSerializer(serializers.Serializer):
 	data = serializers.DictField()
 	version = serializers.IntegerField(default=0)
 
+	def validate_data(self, data):
+		game_type = data.get("game_type")
+		player = data.get("player", {})
+		player_deck = player.get("deck", {})
+
+		if (
+			# Fake Duos -> BGT_BATTLEGROUNDS to ensure the Twitch Extension fetches Battlegrounds renders (with tier
+			# icons), until we can update the extension frontend.
+			game_type in (65, 66, 67, 68) or
+			# Temporary workaround for HDT not sending the right Duos game type (can be removed after HDT v1.25.4)
+			(game_type == 0 and player_deck.get("size") == 0)
+		):
+			data["game_type"] = 50
+
+		return data
+
 
 class IntegerFieldStoredAsCharField(serializers.IntegerField):
 	def to_internal_value(self, data):
