@@ -5,7 +5,7 @@ import json
 import logging
 import string
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -206,7 +206,7 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		cards_list.sort()
 
-		sideboards = defaultdict(list)
+		sideboards: Union[dict, defaultdict] = defaultdict(list)
 
 		for owner_dbf_id, dbf_id, _, initial in deck_data.get("sideboards", []):
 			for i in range(initial):
