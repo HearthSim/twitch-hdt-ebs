@@ -18,6 +18,9 @@ class TwitchClient:
 	API_EXTENSION_REQUIRED_CONFIGURATION = (
 		API_ROOT + "/extensions/required_configuration"
 	)
+	API_EXTENSION_CONFIGURATIONS = (
+		API_ROOT + "/extensions/configurations"
+	)
 	API_GET_STREAMS = API_ROOT + "/streams"
 	API_GET_USERS = API_ROOT + "/users"
 	API_GET_VIDEOS = API_ROOT + "/videos"
@@ -80,6 +83,23 @@ class TwitchClient:
 		authorization = self.get_ebs_authorization(channel_id)
 
 		return self.put(endpoint, data=data, params=params, authorization=authorization)
+
+	def set_extension_configuration_segment(
+		self, channel_id: str, segment: str, version: str,
+	) -> requests.Response:
+		endpoint = self.API_EXTENSION_CONFIGURATIONS
+		data = {
+			"broadcaster_id": channel_id,
+			"extension_id": self.client_id,
+			"segment": segment,
+			"version": str(version),
+		}
+		authorization = self.get_ebs_authorization(channel_id)
+
+		return self.put(
+			endpoint, data=data, authorization=authorization,
+			content_type="application/json",
+		)
 
 	def get_user_stream(self, user_id: str):
 		endpoint = self.API_GET_STREAMS
@@ -148,7 +168,10 @@ class TwitchClient:
 
 	def put(
 		self, url: str, data: dict, params: dict = None,
-		authorization: str = "", timeout: int = DEFAULT_TIMEOUT
+		authorization: str = "", timeout: int = DEFAULT_TIMEOUT,
+		content_type=None,
 	) -> requests.Response:
 		headers = self.get_headers(authorization)
+		if content_type is not None:
+			headers["Content-Type"] = content_type
 		return requests.put(url, params=params, headers=headers, json=data, timeout=timeout)

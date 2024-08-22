@@ -254,14 +254,32 @@ class ExtensionSetupView(BaseTwitchAPIView):
 		if not authorized_apps.count():
 			raise PermissionDenied({"error": "upstream_client_not_found"})
 
-		value = "COMPLETE"
+		use_legacy_configuration = version == "1.3.0"
+		if use_legacy_configuration:
+			try:
+				resp = twitch_client.set_extension_required_configuration(
+					version=version, value="COMPLETE", channel_id=self.request.twitch_user_id
+				)
+			except Timeout:
+				raise TwitchAPITimeout()
 
 		try:
-			resp = twitch_client.set_extension_required_configuration(
-				version=version, value=value, channel_id=self.request.twitch_user_id
+			new_resp = twitch_client.set_extension_configuration_segment(
+				channel_id=self.request.twitch_user_id,
+				segment="developer",
+				version=1,
 			)
+			write_point(
+				"new_extension_configuration",
+				{"count": 1, "user_id": self.request.twitch_user_id},
+				version=version,
+				status_code=new_resp.status_code,
+			)
+			if not use_legacy_configuration:
+				resp = new_resp
 		except Timeout:
-			raise TwitchAPITimeout()
+			if not use_legacy_configuration:
+				raise TwitchAPITimeout()
 
 		if resp.status_code > 299:
 			try:
@@ -279,7 +297,7 @@ class ExtensionSetupView(BaseTwitchAPIView):
 				}
 			)
 
-		return Response({"required_configuration": value})
+		return Response()
 
 
 class SetConfigView(BaseTwitchAPIView):
