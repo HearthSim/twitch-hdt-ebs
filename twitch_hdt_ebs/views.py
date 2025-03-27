@@ -445,7 +445,10 @@ class ActiveChannelsView(APIView):
 		channel_login,
 		sideboard: Optional[Dict[int, List[int]]] = None
 	) -> str:
-		deck_key = ",".join(sorted([str(dbfid) for dbfid in card_list]))
+		deck_key = (
+			"twitch_ebs:ActiveChannelsView:to_deck_url:" +
+			",".join(sorted([str(dbfid) for dbfid in card_list]))
+		)
 
 		if sideboard:
 			for linked_card_dbf_id, sideboard_dbf_ids in sorted(sideboard.items()):
