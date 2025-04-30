@@ -26,7 +26,7 @@ from rest_framework.exceptions import (
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from sentry_sdk import set_user
+from sentry_sdk import capture_exception, set_user
 from shortuuid.main import int_to_string
 
 from .exceptions import TwitchAPITimeout
@@ -411,7 +411,10 @@ class ActiveChannelsView(APIView):
 	def _dbf_id_to_card_id(self, dbf_id) -> str:
 		card_id = self.CARDS_MAP_CACHE.get(dbf_id)
 		if not card_id:
-			card = Card.objects.get(dbf_id=dbf_id)
+			try:
+				card = Card.objects.get(dbf_id=dbf_id)
+			except Card.DoesNotExist as dne:
+				raise ValueError(f"Card with dbf_id {dbf_id} not found") from dne
 			card_id = card.card_id
 			self.CARDS_MAP_CACHE[dbf_id] = card.card_id
 
@@ -521,11 +524,15 @@ class ActiveChannelsView(APIView):
 			channel_login = twitch_account["login"]
 			deck_cards = details.get("deck")
 			deck_sideboards = details.get("sideboards")
-			deck_url = self.to_deck_url(
-				deck_cards,
-				channel_login,
-				sideboard=deck_sideboards
-			) if deck_cards else None
+			try:
+				deck_url = self.to_deck_url(
+					deck_cards,
+					channel_login,
+					sideboard=deck_sideboards
+				) if deck_cards else None
+			except ValueError as ve:
+				capture_exception(ve)
+				deck_url = None
 
 			data.append({
 				"channel_login": channel_login,
