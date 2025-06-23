@@ -138,7 +138,7 @@ AUTH_PASSWORD_VALIDATORS: list = []
 # Disable DRF browsable API (it requires templates to be setup)
 REST_FRAMEWORK = {
 	"DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer", ),
-	"EXCEPTION_HANDLER": "twitch_hdt_ebs.views.exception_handler",
+	"EXCEPTION_HANDLER": "twitch_hdt_ebs.exceptions.untapped_django_exception_handler",
 }
 
 # DRF CORS handling
