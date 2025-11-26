@@ -15,8 +15,8 @@ class PubSubMessageSerializer(serializers.Serializer):
 
 		if (
 			# Fake Duos -> BGT_BATTLEGROUNDS to ensure the Twitch Extension fetches Battlegrounds renders (with tier
-			# icons), until we can update the extension frontend.
-			game_type in (51, 65, 66, 67, 68)
+			# icons), until we can update the extension frontend
+			game_type in (51, 62, 65, 66, 67, 70, 71, 72)
 		):
 			data["game_type"] = 50
 
