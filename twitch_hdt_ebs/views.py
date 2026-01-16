@@ -2,7 +2,6 @@ import base64
 import functools
 import hashlib
 import json
-import logging
 import string
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Union
@@ -614,18 +613,3 @@ class CurrentVodView(BaseTwitchAPIView):
 class PingView(View):
 	def get(self, request):
 		return HttpResponse("OK", content_type="text/plain")
-
-
-def exception_handler(exc, context):
-	from rest_framework.views import exception_handler as original_handler
-
-	response = original_handler(exc, context)
-	detail = getattr(exc, "detail", {})
-
-	logger = logging.getLogger("twitch_hdt_ebs")
-	logger.error("Got exception %r, detail=%r", exc, detail)
-
-	if detail and isinstance(detail, dict):
-		write_point("api_error", {"count": 1}, error=detail.get("error", "unknown"))
-
-	return response
