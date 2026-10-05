@@ -101,6 +101,7 @@ MIDDLEWARE = [
 	"django.middleware.common.CommonMiddleware",
 	"django.middleware.csrf.CsrfViewMiddleware",
 	"django.contrib.auth.middleware.AuthenticationMiddleware",
+	"allauth.account.middleware.AccountMiddleware",
 	"django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -133,6 +134,9 @@ CACHES = {
 
 TEMPLATES: list = []
 AUTH_PASSWORD_VALIDATORS: list = []
+
+# unused, but allauth's AccountMiddleware crashes if it is None
+STATIC_URL = "/static/"
 
 
 # Disable DRF browsable API (it requires templates to be setup)
