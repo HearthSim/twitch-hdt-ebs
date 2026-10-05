@@ -85,7 +85,7 @@ class TwitchClient:
 		return self.put(endpoint, data=data, params=params, authorization=authorization)
 
 	def set_extension_configuration_segment(
-		self, channel_id: str, segment: str, version: str,
+		self, channel_id: str, segment: str, version: int,
 	) -> requests.Response:
 		endpoint = self.API_EXTENSION_CONFIGURATIONS
 		data = {

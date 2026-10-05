@@ -10,8 +10,6 @@ class PubSubMessageSerializer(serializers.Serializer):
 
 	def validate_data(self, data):
 		game_type = data.get("game_type")
-		player = data.get("player", {})
-		player_deck = player.get("deck", {})
 
 		if (
 			# Fake Duos -> BGT_BATTLEGROUNDS to ensure the Twitch Extension fetches Battlegrounds renders (with tier
