@@ -5,7 +5,7 @@ import json
 import logging
 import string
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jwt
 from allauth.socialaccount.models import SocialAccount
@@ -29,10 +29,37 @@ from rest_framework.views import APIView
 from sentry_sdk import capture_exception, set_user
 from shortuuid.main import int_to_string
 
-from .exceptions import TwitchAPITimeout
+from .exceptions import CardIdNotSupported, TwitchAPITimeout
 from .permissions import HasApiSecretKey
 from .serializers import ConfigSerializer, PubSubMessageSerializer
 from .twitch import TwitchClient
+
+
+def _require_dbf_id(card: Union[int, str]) -> int:
+	if isinstance(card, str):
+		raise CardIdNotSupported(card)
+	return card
+
+
+def _flatten_deck(deck_data: dict) -> Tuple[List[int], Dict[int, List[int]]]:
+	cards_list = []
+
+	for card, _, initial in deck_data.get("cards", []):
+		dbf_id = _require_dbf_id(card)
+		for i in range(initial):
+			cards_list.append(dbf_id)
+
+	cards_list.sort()
+
+	sideboards: Dict[int, List[int]] = defaultdict(list)
+
+	for owner_card, card, _, initial in deck_data.get("sideboards", []):
+		owner_dbf_id = _require_dbf_id(owner_card)
+		dbf_id = _require_dbf_id(card)
+		for i in range(initial):
+			sideboards[owner_dbf_id].append(dbf_id)
+
+	return cards_list, {o: sorted(c) for o, c in sideboards.items()}
 
 
 def _extract_twitch_client_id(request) -> str:
@@ -198,21 +225,13 @@ class PubSubSendView(BaseTwitchAPIView):
 
 		deck_data = data.get("deck", {})
 
-		cards_list = []
-
-		for dbf_id, _, initial in deck_data.get("cards", []):
-			for i in range(initial):
-				cards_list.append(dbf_id)
-
-		cards_list.sort()
-
-		sideboards: Union[dict, defaultdict] = defaultdict(list)
-
-		for owner_dbf_id, dbf_id, _, initial in deck_data.get("sideboards", []):
-			for i in range(initial):
-				sideboards[owner_dbf_id].append(dbf_id)
-
-		sideboards = {o: sorted(c) for o, c in sideboards.items()}
+		cards_list: Optional[List[int]]
+		sideboards: Optional[Dict[int, List[int]]]
+		try:
+			cards_list, sideboards = _flatten_deck(deck_data)
+		except CardIdNotSupported:
+			# keep the channel active without a deck
+			cards_list, sideboards = None, None
 
 		cache_key = f"twitch_hdt_live_id_{self.request.twitch_user_id}"
 		caches["default"].set(cache_key, {

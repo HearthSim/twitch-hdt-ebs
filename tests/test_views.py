@@ -300,6 +300,62 @@ def test_game_start(requests_mock, mocker, client):
 	assert stored["deck"] == DECK_LIST_FLAT
 
 
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	HDT_TWITCH_CLIENT_ID="1a",
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		}
+	},
+	CACHE_READONLY=False,
+)
+def test_game_start_with_card_ids(requests_mock, mocker, client):
+	TWITCH_USER_ID = 1
+
+	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE, status_code=204)
+
+	mock_authentication(mocker)
+
+	response = client.post(
+		"/send/",
+		{
+			"type": "game_start",
+			"data": {
+				"deck": {
+					"hero": "HERO_07",
+					"format": 2,
+					"cards": [[268, 2, 2], ["BE_093", 2, 2]],
+				},
+				"game_type": 2,
+				"rank": 10,
+				"legend_rank": 0,
+			},
+			"version": 3
+		},
+		content_type="application/json",
+		HTTP_CONTENT_TYPE="application/json",
+		HTTP_AUTHORIZATION="Bearer xxx",
+		HTTP_X_TWITCH_USER_ID=TWITCH_USER_ID,
+		HTTP_X_TWITCH_CLIENT_ID=1,
+	)
+
+	assert response.status_code == 200
+	assert response.json()["status"] == 204
+
+	stored = caches["default"].get(f"twitch_hdt_live_id_{TWITCH_USER_ID}")
+	assert stored
+	assert stored["deck"] is None
+	assert stored["sideboards"] is None
+	assert stored["game_type"] == 2
+
+
 @pytest.mark.django_db
 @override_settings(
 	EBS_APPLICATIONS={

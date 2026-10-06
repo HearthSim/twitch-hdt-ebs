@@ -2,6 +2,10 @@ from rest_framework import status
 from rest_framework.exceptions import APIException
 
 
+class CardIdNotSupported(ValueError):
+	pass
+
+
 class TwitchAPITimeout(APIException):
 	status_code = status.HTTP_504_GATEWAY_TIMEOUT
 	default_detail = "The Twitch API timed out."
