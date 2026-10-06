@@ -316,7 +316,8 @@ def test_game_start(requests_mock, mocker, client):
 	},
 	CACHE_READONLY=False,
 )
-def test_game_start_with_card_ids(requests_mock, mocker, client):
+@pytest.mark.parametrize("unsupported_card", ["BE_093", 0])
+def test_game_start_with_unsupported_cards(requests_mock, mocker, client, unsupported_card):
 	TWITCH_USER_ID = 1
 
 	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE, status_code=204)
@@ -331,7 +332,7 @@ def test_game_start_with_card_ids(requests_mock, mocker, client):
 				"deck": {
 					"hero": "HERO_07",
 					"format": 2,
-					"cards": [[268, 2, 2], ["BE_093", 2, 2]],
+					"cards": [[268, 2, 2], [unsupported_card, 2, 2]],
 				},
 				"game_type": 2,
 				"rank": 10,

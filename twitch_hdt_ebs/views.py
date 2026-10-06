@@ -29,15 +29,16 @@ from rest_framework.views import APIView
 from sentry_sdk import capture_exception, set_user
 from shortuuid.main import int_to_string
 
-from .exceptions import CardIdNotSupported, TwitchAPITimeout
+from .exceptions import TwitchAPITimeout, UnsupportedCard
 from .permissions import HasApiSecretKey
 from .serializers import ConfigSerializer, PubSubMessageSerializer
 from .twitch import TwitchClient
 
 
 def _require_dbf_id(card: Union[int, str]) -> int:
-	if isinstance(card, str):
-		raise CardIdNotSupported(card)
+	# card ids are sent by newer HDT versions and 0 means the card is unknown
+	if isinstance(card, str) or card == 0:
+		raise UnsupportedCard(card)
 	return card
 
 
@@ -229,7 +230,7 @@ class PubSubSendView(BaseTwitchAPIView):
 		sideboards: Optional[Dict[int, List[int]]]
 		try:
 			cards_list, sideboards = _flatten_deck(deck_data)
-		except CardIdNotSupported:
+		except UnsupportedCard:
 			# keep the channel active without a deck
 			cards_list, sideboards = None, None
 
