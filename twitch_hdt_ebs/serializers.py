@@ -18,6 +18,15 @@ class PubSubMessageSerializer(serializers.Serializer):
 		):
 			data["game_type"] = 50
 
+		if data.get("hearthstone_build") == 253957:
+			del data["hearthstone_build"]
+			decks = [data.get("deck"), (data.get("player") or {}).get("deck")]
+			for deck in decks:
+				if isinstance(deck, dict):
+					deck["cards"] = []
+					if "sideboards" in deck:
+						deck["sideboards"] = []
+
 		return data
 
 

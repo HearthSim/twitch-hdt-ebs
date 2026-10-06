@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from django.core.cache import caches
 from django.test import override_settings
@@ -355,6 +357,64 @@ def test_game_start_with_unsupported_cards(requests_mock, mocker, client, unsupp
 	assert stored["deck"] is None
 	assert stored["sideboards"] is None
 	assert stored["game_type"] == 2
+
+
+@override_settings(
+	EBS_APPLICATIONS={
+		"1a": {
+			"secret": "eA==",
+			"owner_id": "1",
+			"ebs_client_id": "y",
+		}
+	},
+	HDT_TWITCH_CLIENT_ID="1a",
+	CACHES={
+		"default": {
+			"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
+		}
+	},
+	CACHE_READONLY=False,
+)
+@pytest.mark.parametrize("message_type,data", [
+	("game_start", {
+		"deck": {"hero": 930, "format": 1, "cards": [[268, 2, 2]], "sideboards": [[1, 2, 1, 1]]},
+		"game_type": 2,
+		"hearthstone_build": 253957,
+	}),
+	("board_state", {
+		"player": {"deck": {"cards": [[268, 2, 2]], "sideboards": [[1, 2, 1, 1]], "size": 30}},
+		"game_type": 2,
+		"hearthstone_build": 253957,
+	}),
+])
+def test_send_strips_build_and_deck_for_hidden_build(
+	requests_mock, mocker, client, message_type, data
+):
+	requests_mock.post(TwitchClient.EBS_SEND_MESSAGE, status_code=204)
+	mock_authentication(mocker)
+
+	response = client.post(
+		"/send/",
+		{"type": message_type, "data": data, "version": 3},
+		content_type="application/json",
+		HTTP_CONTENT_TYPE="application/json",
+		HTTP_AUTHORIZATION="Bearer xxx",
+		HTTP_X_TWITCH_USER_ID=1,
+		HTTP_X_TWITCH_CLIENT_ID=1,
+	)
+
+	assert response.status_code == 200
+
+	sent = json.loads(requests_mock.last_request.json()["message"])["data"]
+	assert "hearthstone_build" not in sent
+	deck = sent["deck"] if message_type == "game_start" else sent["player"]["deck"]
+	assert deck["cards"] == []
+	assert deck["sideboards"] == []
+
+	if message_type == "game_start":
+		stored = caches["default"].get("twitch_hdt_live_id_1")
+		assert stored["deck"] == []
+		assert stored["sideboards"] == {}
 
 
 @pytest.mark.django_db
